@@ -235,7 +235,6 @@ if __name__ == '__main__':
         Var('tau_ip3d', float),
         Var('tau_ip3d_err', float),
         Var('tau_ip3d_sig', float),
-        Var('tau_dxy_sig', float),
         Var('tau_flightLength', float),
         Var('tau_flightLength_sig', float)
     ]
