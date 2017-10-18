@@ -1,54 +1,20 @@
+''' Produces plots for tau release/data validation using the trees produced by
+produceTauValTree.py
+Authors: Yuta Takahashi, Michal Bluj, Jan Steggemann.
+'''
 from officialStyle import officialStyle
 from array import array
-from ROOT import gROOT, gStyle, TH1F, TH1D, TF1, TFile, TCanvas, TPad, TH2F, TLegend, TGraphAsymmErrors, Double, TLatex
+from ROOT import gROOT, gStyle, TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex
 import os
 import copy
 import sys
+from variables import vardict
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
 gStyle.SetOptTitle(0)
 # set_palette("color")
 # gStyle.SetPaintTextFormat("2.0f")
-
-
-argvs = sys.argv
-argc = len(argvs)
-
-if argc != 2:
-    print 'Please specify the runtype : python tauPOGplot.py <ZTT, ZEE, ZMM, QCD>'
-    sys.exit(0)
-
-runtype = argvs[1]
-print 'You selected', runtype
-
-
-tlabel = 'Z #rightarrow #tau#tau'
-# tlabel = 'gg #rightarrow H(125) #rightarrow #tau#tau'
-xlabel = 'gen. tau p_{T}^{vis} (GeV)'
-xlabel_eta = 'gen. tau #eta^{vis}'
-
-if runtype == 'QCD':
-    #tlabel = 'QCD'
-    tlabel = 'QCD, flat #hat{p}_{T} 15-3000GeV'
-    xlabel = 'jet p_{T} (GeV)'
-    xlabel_eta = 'jet #eta'
-elif runtype == 'ZEE':
-    tlabel = 'Z #rightarrow ee'
-    xlabel = 'electron p_{T} (GeV)'
-    xlabel_eta = 'electron #eta'
-elif runtype == 'ZMM':
-    tlabel = 'Z #rightarrow #mu#mu'
-    xlabel = 'muon p_{T} (GeV)'
-    xlabel_eta = 'muon #eta'
-elif runtype == 'TTbar':
-    tlabel = 'TTbar'
-    xlabel = 'jet p_{T} (GeV)'
-    xlabel_eta = 'jet #eta'
-elif runtype == 'TTbarTau':
-    tlabel = 'TTbar #rightarrow #tau+X'
-    xlabel = 'gen. tau p_{T}^{vis} (GeV)'
-    xlabel_eta = 'gen. tau #eta^{vis}'
 
 
 def ensureDir(directory):
@@ -138,22 +104,15 @@ def overlay(hists, ytitle, header, addon):
     leg = TLegend(0.2, 0.7, 0.5, 0.9)
     LegendSettings(leg, 1)
 
-    col = [1, 2, 4, 6, 8, 9, 12]
-
     ymax = -1
     ymin = 100
 
-    # if header.find('against')!=-1 and (runtype.find('ZMM')!=-1 or runtype.find('ZEE')!=-1):
-    #    canvas.SetLogy()
-
     for ii, hist in enumerate(hists):
         hist.GetYaxis().SetTitle('efficiency')
-        # hist.SetLineColor(col[ii])
-        # hist.SetMarkerColor(col[ii])
         hist.SetLineWidth(2)
         hist.SetMarkerSize(1)
 
-        for ip in range(hist.GetN()):
+        for ip in xrange(hist.GetN()):
             x = Double(-1)
             y = Double(-1)
             hist.GetPoint(ip, x, y)
@@ -162,12 +121,6 @@ def overlay(hists, ytitle, header, addon):
                 ymin = y
             if ymax < y:
                 ymax = y
-
-#
-#        if ymax < hist.GetMaximum():
-#            ymax = hist.GetMaximum()
-#        if ymin > hist.GetMinimum():
-#            ymin = hist.GetMinimum()
 
         if ii == 0:
             hist.Draw("Azp")
@@ -340,220 +293,60 @@ def makeEffPlotsVars(tree, varx, vary, sel, nbinx, xmin, xmax, nbiny, ymin, ymax
 
 
 if __name__ == '__main__':
+    argvs = sys.argv
+    argc = len(argvs)
 
-    vardict = {
-        'againstMuonLoose3': {'var': 'tau_againstMuonLoose3 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstMuonLoose3'},
-        'againstMuonTight3': {'var': 'tau_againstMuonTight3 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstMuonTight3'},
+    if argc != 2:
+        print 'Please specify the runtype : python compare.py <ZTT, ZEE, ZMM, QCD>'
+        sys.exit(0)
 
-        #'againstElectronVLooseMVA5':{'var':'tau_againstElectronVLooseMVA5 > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'againstElectronVLooseMVA5'},
-        #'againstElectronLooseMVA5':{'var':'tau_againstElectronLooseMVA5 > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'againstElectronLooseMVA5'},
-        #'againstElectronMediumMVA5':{'var':'tau_againstElectronMediumMVA5 > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'againstElectronMediumMVA5'},
+    runtype = argvs[1]
+    print 'You selected', runtype
+    
 
-        'againstElectronVLooseMVA6': {'var': 'tau_againstElectronVLooseMVA6 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstElectronVLooseMVA6'},
-        'againstElectronLooseMVA6': {'var': 'tau_againstElectronLooseMVA6 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstElectronLooseMVA6'},
-        'againstElectronMediumMVA6': {'var': 'tau_againstElectronMediumMVA6 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstElectronMediumMVA6'},
+    tlabel = 'Z #rightarrow #tau#tau'
+    # tlabel = 'gg #rightarrow H(125) #rightarrow #tau#tau'
+    xlabel = 'gen. tau p_{T}^{vis} (GeV)'
+    xlabel_eta = 'gen. tau #eta^{vis}'
 
-        'oldDecayModeFinding': {'var': 'tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'oldDecayModeFinding'},
-        'newDecayModeFinding': {'var': 'tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'newDecayModeFinding'},
-        #'oldDecayModeFindingModified':{'var':'tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'oldDecayModeFinding w/ 3p+#pi^{0}'},
-        'oldDecayModeFindingModified': {'var': '(tau_decayModeFindingOldDMs > 0.5 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'oldDecayModeFinding w/ 3p+#pi^{0}'},
-
-        # oldDM
-        #'byLoosePileupWeightedIsolation3Hits':{'var':'tau_byLoosePileupWeightedIsolation3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byLoosePileupWeightedIsolation3Hits'},
-        #'byMediumPileupWeightedIsolation3Hits':{'var':'tau_byMediumPileupWeightedIsolation3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byMediumPileupWeightedIsolation3Hits'},
-        #'byTightPileupWeightedIsolation3Hits':{'var':'tau_byTightPileupWeightedIsolation3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byTightPileupWeightedIsolation3Hits'},
-
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation': {'var': 'tau_chargedIsoPtSum < 2.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation': {'var': 'tau_chargedIsoPtSum < 1.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation': {'var': 'tau_chargedIsoPtSum < 0.8 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr': {'var': 'tau_neutralIsoPtSum < 6 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr': {'var': 'tau_neutralIsoPtSum < 5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr': {'var': 'tau_neutralIsoPtSum < 4 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        #'byLooseIsolationMVA3oldDMwLT':{'var':'tau_byLooseIsolationMVA3oldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byLooseIsolationMVA3oldDMwLT'},
-        #'byMediumIsolationMVA3oldDMwLT':{'var':'tau_byMediumIsolationMVA3oldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byMediumIsolationMVA3oldDMwLT'},
-        #'byTightIsolationMVA3oldDMwLT':{'var':'tau_byTightIsolationMVA3oldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'byTightIsolationMVA3oldDMwLT'},
-
-        'byLooseIsolationMVArun2v1DBoldDMwLT': {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT'},
-        'byMediumIsolationMVArun2v1DBoldDMwLT': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT'},
-        'byTightIsolationMVArun2v1DBoldDMwLT': {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT'},
-
-        # newDM
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_newDM': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_newDM': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_newDM': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_newDM': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_newDM': {'var': 'tau_chargedIsoPtSum < 2.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_newDM': {'var': 'tau_chargedIsoPtSum < 1.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_newDM': {'var': 'tau_chargedIsoPtSum < 0.8 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_newDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_newDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_newDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 6 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 4 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        # modOldDM
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_modOldDM': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_modOldDM': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_modOldDM': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_modOldDM': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_modOldDM': {'var': 'tau_chargedIsoPtSum < 2.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_modOldDM': {'var': 'tau_chargedIsoPtSum < 1.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_modOldDM': {'var': 'tau_chargedIsoPtSum < 0.8 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_modOldDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_modOldDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_modOldDM': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_modOldDM': {'var': 'tau_neutralIsoPtSum < 6 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_modOldDM': {'var': 'tau_neutralIsoPtSum < 5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_modOldDM': {'var': 'tau_neutralIsoPtSum < 4 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-
-        # 1prong
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_1p': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_1p': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_1p': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_1p': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_1p': {'var': 'tau_chargedIsoPtSum < 2.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_1p': {'var': 'tau_chargedIsoPtSum < 1.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_1p': {'var': 'tau_chargedIsoPtSum < 0.8 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_1p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_1p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_1p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_1p': {'var': 'tau_neutralIsoPtSum < 6 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_1p': {'var': 'tau_neutralIsoPtSum < 5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_1p': {'var': 'tau_neutralIsoPtSum < 4 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        'byLooseIsolationMVArun2v1DBoldDMwLT_1p': {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT'},
-        'byMediumIsolationMVArun2v1DBoldDMwLT_1p': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT'},
-        'byTightIsolationMVArun2v1DBoldDMwLT_1p': {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 0', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT'},
-
-        # 1prong+pi0's
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_1ppi0': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_1ppi0': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_1ppi0': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_1ppi0': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_1ppi0': {'var': 'tau_chargedIsoPtSum < 2.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_1ppi0': {'var': 'tau_chargedIsoPtSum < 1.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_1ppi0': {'var': 'tau_chargedIsoPtSum < 0.8 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_1ppi0': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_1ppi0': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_1ppi0': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_1ppi0': {'var': 'tau_neutralIsoPtSum < 6 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_1ppi0': {'var': 'tau_neutralIsoPtSum < 5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_1ppi0': {'var': 'tau_neutralIsoPtSum < 4 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        'byLooseIsolationMVArun2v1DBoldDMwLT_1ppi0': {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT'},
-        'byMediumIsolationMVArun2v1DBoldDMwLT_1ppi0': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT'},
-        'byTightIsolationMVArun2v1DBoldDMwLT_1ppi0': {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT > 0.5 && (tau_dm == 1 || tau_dm == 2)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT'},
-
-        # 2prongs
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_2p': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_2p': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_2p': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_2p': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_2p': {'var': 'tau_chargedIsoPtSum < 2.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_2p': {'var': 'tau_chargedIsoPtSum < 1.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_2p': {'var': 'tau_chargedIsoPtSum < 0.8 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_2p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_2p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_2p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_2p': {'var': 'tau_neutralIsoPtSum < 6 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_2p': {'var': 'tau_neutralIsoPtSum < 5 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_2p': {'var': 'tau_neutralIsoPtSum < 4 && (tau_dm == 5 || tau_dm==6)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        # 3prongs
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_3p': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_3p': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_3p': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_3p': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_3p': {'var': 'tau_chargedIsoPtSum < 2.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_3p': {'var': 'tau_chargedIsoPtSum < 1.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_3p': {'var': 'tau_chargedIsoPtSum < 0.8 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_3p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_3p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_3p': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_3p': {'var': 'tau_neutralIsoPtSum < 6 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_3p': {'var': 'tau_neutralIsoPtSum < 5 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_3p': {'var': 'tau_neutralIsoPtSum < 4 && (tau_dm == 10 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        # 3prongs classic
-        'byLooseCombinedIsolationDeltaBetaCorr3Hits_3pold': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
-        'byMediumCombinedIsolationDeltaBetaCorr3Hits_3pold': {'var': 'tau_byMediumCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumCombinedIsolationDeltaBetaCorr3Hits'},
-        'byTightCombinedIsolationDeltaBetaCorr3Hits_3pold': {'var': 'tau_byTightCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightCombinedIsolationDeltaBetaCorr3Hits'},
-
-        'byPtOutOfCone_3pold': {'var': 'tau_photonPtSumOutsideSignalCone/tau_pt < 0.1 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'out-of-cone-Pt/Pt < 0.1'},
-        'byLooseChargedIsolation_3pold': {'var': 'tau_chargedIsoPtSum < 2.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 2.5 GeV'},
-        'byMediumChargedIsolation_3pold': {'var': 'tau_chargedIsoPtSum < 1.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 1.5 GeV'},
-        'byTightChargedIsolation_3pold': {'var': 'tau_chargedIsoPtSum < 0.8 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'charged iso < 0.8 GeV'},
-        'byLooseNeutralIsolation_3pold': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1.5 GeV'},
-        'byMediumNeutralIsolation_3pold': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 1.0 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 1 GeV'},
-        'byTightNeutralIsolation_3pold': {'var': 'max(0,tau_neutralIsoPtSum-0.2*tau_puCorrPtSum) < 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': '(neutral-iso - 0.2*PU-Pt-Sum) < 0.5 GeV'},
-        'byLooseNeutralIsolationUnCorr_3pold': {'var': 'tau_neutralIsoPtSum < 6 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
-        'byMediumNeutralIsolationUnCorr_3pold': {'var': 'tau_neutralIsoPtSum < 5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
-        'byTightNeutralIsolationUnCorr_3pold': {'var': 'tau_neutralIsoPtSum < 4 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
-
-        'byLooseIsolationMVArun2v1DBoldDMwLT_3pold': {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT'},
-        'byMediumIsolationMVArun2v1DBoldDMwLT_3pold': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT'},
-        'byTightIsolationMVArun2v1DBoldDMwLT_3pold': {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_dm == 10', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT'},
-
-
-    }
+    if runtype == 'QCD':
+        #tlabel = 'QCD'
+        tlabel = 'QCD, flat #hat{p}_{T} 15-3000GeV'
+        xlabel = 'jet p_{T} (GeV)'
+        xlabel_eta = 'jet #eta'
+    elif runtype == 'ZEE':
+        tlabel = 'Z #rightarrow ee'
+        xlabel = 'electron p_{T} (GeV)'
+        xlabel_eta = 'electron #eta'
+    elif runtype == 'ZMM':
+        tlabel = 'Z #rightarrow #mu#mu'
+        xlabel = 'muon p_{T} (GeV)'
+        xlabel_eta = 'muon #eta'
+    elif runtype == 'TTbar':
+        tlabel = 'TTbar'
+        xlabel = 'jet p_{T} (GeV)'
+        xlabel_eta = 'jet #eta'
+    elif runtype == 'TTbarTau':
+        tlabel = 'TTbar #rightarrow #tau+X'
+        xlabel = 'gen. tau p_{T}^{vis} (GeV)'
+        xlabel_eta = 'gen. tau #eta^{vis}'
 
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
     #loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
     loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
 
-    sampledict = {
-        #'7_6_0_pre7':{'file':'Myroot_7_6_0_pre7_' + runtype + '.root', 'col':2, 'marker':20, 'width':3},
-        #        '7_6_0':{'file':'Myroot_7_6_0_' + runtype + '.root', 'col':1, 'marker':21, 'width':4},
-        #'7_6_1':{'file':'Myroot_7_6_1_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'7_6_1_v3':{'file':'Myroot_7_6_1_v3_' + runtype + '.root', 'col':3, 'marker':23, 'width':1},
-        #'7_6_3':{'file':'Myroot_7_6_3_' + runtype + '.root', 'col':1, 'marker':23, 'width':2},
-        #'8_0_1':{'file':'Myroot_8_0_1_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'8_0_3_newGT':{'file':'Myroot_8_0_3_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'8_0_3_newGT':{'file':'Myroot_8_0_3_' + runtype + '.root', 'col':1, 'marker':23, 'width':2},
-        #'8_1_0_pre6':{'file':'Myroot_8_1_0_pre6_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'8_1_0_pre7':{'file':'Myroot_8_1_0_pre7_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'8_1_0_pre12':{'file':'Myroot_8_1_0_pre12_' + runtype + '.root', 'col':1, 'marker':23, 'width':2},
-        #'8_1_0_pre12_2017ref':{'file':'Myroot_8_1_0_pre12_2017_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'8_1_0_pre12_2017ph1':{'file':'Myroot_8_1_0_pre12_2017ph1_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'8_1_0_2016ref':{'file':'Myroot_8_1_0_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'8_1_0_2017ph1':{'file':'Myroot_8_1_0_2017ph1_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'Spring16':{'file':'Myroot_8_0_11_spr16_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'Summer16':{'file':'Myroot_8_0_21_sum16_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'9_0_0_pre4':{'file':'Myroot_9_0_0_pre4_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'9_0_0_pre5':{'file':'Myroot_9_0_0_pre5_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'9_0_0_pre5':{'file':'Myroot_9_0_0_pre5_' + runtype + '.root', 'col':8, 'marker':20, 'width':2},
-        #'9_0_0_pre6':{'file':'Myroot_9_0_0_pre6_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'9_0_0':{'file':'Myroot_9_0_0_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'9_1_0_pre1':{'file':'Myroot_9_1_0_pre1_' + runtype + '.root', 'col':1, 'marker':21, 'width':2},
-        #'9_1_0_pre2':{'file':'Myroot_9_1_0_pre2_' + runtype + '.root', 'col':2, 'marker':20, 'width':2},
-        #'9_1_0_pre2_2017':{'file':'Myroot_9_1_0_pre2_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'9_1_0_pre2_2023':{'file':'Myroot_9_1_0_pre2_2023_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'9_2_2':{'file':'Myroot_9_2_2_' + runtype + '.root', 'col':4, 'marker':22, 'width':2},
-        #'9_2_7':{'file':'Myroot_9_2_7_' + runtype + '.root', 'col':2, 'marker':21, 'width':2},
-        #'9_3_0_pre1':{'file':'Myroot_9_3_0_pre1_' + runtype + '.root', 'col':7, 'marker':24, 'width':2},
-        #'9_3_0_pre2':{'file':'Myroot_9_3_0_pre2_' + runtype + '.root', 'col':8, 'marker':25, 'width':2},
-        #'9_3_0_pre3':{'file':'Myroot_9_3_0_pre3_' + runtype + '.root', 'col':7, 'marker':24, 'width':2},
-        # 'MCv1_9_2_8': {'file': 'Myroot_9_2_8_default_' + runtype + '.root', 'col': 4, 'marker': 22, 'width': 2},
-        'ZSfix_9_2_8': {'file': 'Myroot_9_2_8_ZSfix_' + runtype + '.root', 'col': 8, 'marker': 25, 'width': 2},
-        # 'RelVal_9_2_8': {'file': 'Myroot_9_2_8_' + runtype + '.root', 'col': 2, 'marker': 21, 'width': 2},
-    }
+    styles = [
+        {'col': 8, 'marker': 25, 'width': 2},
+        {'col': 2, 'marker': 21, 'width': 2},
+        {'col': 4, 'marker': 21, 'width': 2},
+        {'col': 7, 'marker': 24, 'width': 2},
+    ]
+    releases = ['CMSSW_9_4_0_pre1', 'CMSSW_9_4_0_pre1']
+    
+    sampledict = {}
+    for i_sample, release in enumerate(releases):
+        sampledict[release] = styles[i_sample]
+        sampledict[release]['file'] = 'Myroot_{}_{}.root'.format(release, runtype)
 
     for hname, hdict in sorted(vardict.iteritems()):
 
