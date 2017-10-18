@@ -11,8 +11,8 @@ Run the following commands to produce validation plots:
      python produceTauValTree.py ZTT
      python compare.py ZTT
 
-## Things to do
+## Things to do/notes
 
-* Use argument parsing to pass releases and global tags
-* Fix crash in compare.py
 * Uses eostools from cmg-cmssw since the one in CMSSW is broken
+* Add more samples (VBF Higgs, H+, ZEE)
+* Finish setting up the different samples

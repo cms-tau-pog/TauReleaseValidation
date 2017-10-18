@@ -3,9 +3,12 @@ Authors: Yuta Takahashi, Michal Bluj, Jan Steggemann.
 '''
 
 import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
+
 import math
 import sys
 import re
+import argparse
 import numpy as num
 
 from DataFormats.FWLite import Events, Handle
@@ -16,16 +19,24 @@ import eostools
 
 ROOT.gROOT.SetBatch(True)
 
-maxEvents = -1
 
-# RelVal = 'CMSSW_9_4_0_pre2'
-# globalTag = 'PU25ns_94X_mc2017_realistic_v1-v1'
+class Var:
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+        self.storage = None
 
-RelVal = 'CMSSW_9_4_0_pre1'
-globalTag = 'PU25ns_93X_mc2017_realistic_v3-v1'
+    def reset(self):
+        self.storage[0] = -999
 
-#useRecoJets = True
-useRecoJets = False
+    def fill(self, val):
+        self.storage[0] = val
+
+    def add(self, val):
+        self.storage[0] += val
+
+    def __str__(self):
+        return 'Var: name={}, type={}, val={:.2f}'.format(self.name, self.type, self.storage[0])
 
 
 def returnRough(dm):
@@ -76,33 +87,37 @@ def getFilesFromEOS(path):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    tauH = Handle('vector<pat::Tau>')
-    vertexH = Handle('std::vector<reco::Vertex>')
-    genParticlesH = Handle('std::vector<reco::GenParticle>')
-    jetH = Handle('vector<pat::Jet>')
-    genJetH = Handle('vector<reco::GenJet>')
-    puH = Handle('std::vector<PileupSummaryInfo>')
-    candH = Handle('vector<pat::PackedCandidate>')
-    lostH = Handle('vector<pat::PackedCandidate>')
+    parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
+
+    parser.add_argument('--relval',  help='Release string', default='CMSSW_9_4_0_pre2')
+    parser.add_argument('--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
+    parser.add_argument('--maxEvents',  help='Global tag', default=-1)
+    parser.add_argument('--useRecoJets',  help='Global tag', default=False)
+
+    args = parser.parse_args()
+        
+    maxEvents = args.maxEvents
+    RelVal = args.relval
+    globalTag = args.globalTag
+    useRecoJets = args.useRecoJets
+
+    runtype = args.runtype
+
+    print 'Running with'
+    print 'runtype', runtype
+    print 'RelVal', RelVal
+    print 'globalTag', globalTag
 
     filelist = []
-    argvs = sys.argv
-    argc = len(argvs)
-
-    if argc != 2:
-        print 'Please specify the runtype : python runTauDisplay.py <ZTT, ZEE, ZMM, QCD>'
-        sys.exit(0)
-
-    runtype = argvs[1]
-
-    print 'You selected', runtype
-
+    
     runtype_to_sample = {
         'ZTT':'RelValZTT_13',
         'ZMM':'RelValZpMM_13',
         'QCD':'RelValQCD_FlatPt_15_3000HS_13',
         'TTbar':'RelValTTbar_13',
+        'TTbarTau':'RelValTTbar_13',
         'ZpTT':'RelValZpTT_1500_13'
     }
 
@@ -142,25 +157,6 @@ if __name__ == '__main__':
     h_lost_phi = ROOT.TH1F("h_lost_phi", "lost;#phi", 64, -3.2, 3.2)
 
     tau_tree = ROOT.TTree('per_tau', 'per_tau')
-
-    class Var:
-
-        def __init__(self, name, type):
-            self.name = name
-            self.type = type
-            self.storage = None
-
-        def reset(self):
-            self.storage[0] = -999
-
-        def fill(self, val):
-            self.storage[0] = val
-
-        def add(self, val):
-            self.storage[0] += val
-
-        def __str__(self):
-            return 'Var: name={}, type={}, val={:.2f}'.format(self.name, self.type, self.storage[0])
 
     all_vars = [
         Var('tau_eventid', int),
@@ -248,6 +244,15 @@ if __name__ == '__main__':
 
     evtid = 0
     doPrint = True  # FIXME, for debug
+
+    tauH = Handle('vector<pat::Tau>')
+    vertexH = Handle('std::vector<reco::Vertex>')
+    genParticlesH = Handle('std::vector<reco::GenParticle>')
+    jetH = Handle('vector<pat::Jet>')
+    genJetH = Handle('vector<reco::GenJet>')
+    puH = Handle('std::vector<PileupSummaryInfo>')
+    candH = Handle('vector<pat::PackedCandidate>')
+    lostH = Handle('vector<pat::PackedCandidate>')
 
     for event in events:
         for var in all_vars:

@@ -2,17 +2,22 @@
 produceTauValTree.py
 Authors: Yuta Takahashi, Michal Bluj, Jan Steggemann.
 '''
+
+import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
+
+from ROOT import gROOT, gStyle, TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex
 from officialStyle import officialStyle
 from array import array
-from ROOT import gROOT, gStyle, TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex
 import os
-import copy
-import sys
+import argparse
 from variables import vardict, hvardict
+
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
 gStyle.SetOptTitle(0)
+
 # set_palette("color")
 # gStyle.SetPaintTextFormat("2.0f")
 
@@ -225,15 +230,19 @@ def makeEffPlotsVars(tree, varx, vary, sel, nbinx, xmin, xmax, nbiny, ymin, ymax
 
 
 if __name__ == '__main__':
-    argvs = sys.argv
-    argc = len(argvs)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    if argc != 2:
-        print 'Please specify the runtype : python compare.py <ZTT, ZEE, ZMM, QCD>'
-        sys.exit(0)
+    parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
+    parser.add_argument('--releases', help='comma separated list of releases', default='CMSSW_9_4_0_pre1,CMSSW_9_4_0_pre2')
+    
+    args = parser.parse_args()
 
-    runtype = argvs[1]
-    print 'You selected', runtype
+    runtype = args.runtype
+    print 'Producing plots for runtype', runtype
+    
+    releases = args.releases.split(',')
+    
+    print 'Releases', releases
     
 
     tlabel = 'Z #rightarrow #tau#tau'
@@ -273,7 +282,6 @@ if __name__ == '__main__':
         {'col': 4, 'marker': 21, 'width': 2},
         {'col': 7, 'marker': 24, 'width': 2},
     ]
-    releases = ['CMSSW_9_4_0_pre1', 'CMSSW_9_4_0_pre2']
     
     sampledict = {}
     for i_sample, release in enumerate(releases):
