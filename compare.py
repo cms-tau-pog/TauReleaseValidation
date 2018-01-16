@@ -62,7 +62,7 @@ def overlay(hists, ytitle, header, addon):
         hist.SetLineWidth(2)
         hist.SetMarkerSize(1)
 
-        for ip in xrange(0,hist.GetN()):
+        for ip in xrange(hist.GetN()):
             x = Double(-1)
             y = Double(-1)
             hist.GetPoint(ip, x, y)
@@ -129,12 +129,12 @@ def overlay(hists, ytitle, header, addon):
 	if alpha in header: directory2 = beta
 
     if "_eta" in header:
-	if directory1 != "": directory1 += "_eta"
-	if directory2 != "": directory2 += "_eta"
+	if directory1: directory1 += "_eta"
+	if directory2: directory2 += "_eta"
 
-    if directory1 != "": save(canvas, 'compare_' + runtype + '/' + directory1 + '/' + header)
-    if directory2 != "": save(canvas, 'compare_' + runtype + '/' + directory2 + '/' + header)
-    if directory1 == "" and directory2 == "":  save(canvas, 'compare_' + runtype + '/' + header)
+    if directory1: save(canvas, 'compare_' + runtype + '/' + directory1 + '/' + header)
+    if directory2: save(canvas, 'compare_' + runtype + '/' + directory2 + '/' + header)
+    if not directory1 and not directory2:  save(canvas, 'compare_' + runtype + '/' + header)
     if "_eta" in header:
         save(canvas, 'compare_' + runtype + '/all_eta/' + header)
     else:
