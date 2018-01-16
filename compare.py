@@ -28,9 +28,13 @@ def ensureDir(directory):
 
 
 def save(canvas, name):
-    ensureDir('compare_' + runtype)
-    canvas.SaveAs(name.replace(' ', '').replace('&&', '')+'.pdf')
-    canvas.SaveAs(name.replace(' ', '').replace('&&', '')+'.gif')
+    ensureDir(name[0:name.find("/")])
+    ensureDir(name[0:name.rfind("/")])
+    #ensureDir('compare_' + runtype)
+
+    #canvas.SaveAs(name.replace(' ', '').replace('&&', '')+'.pdf')
+    #canvas.SaveAs(name.replace(' ', '').replace('&&', '')+'.gif')
+    canvas.SaveAs(name.replace(' ', '').replace('&&', '')+'.png')
 
 
 def configureLegend(leg, ncolumn):
@@ -39,12 +43,12 @@ def configureLegend(leg, ncolumn):
     leg.SetFillColor(10)
     leg.SetLineColor(0)
     leg.SetFillStyle(0)
-    leg.SetTextSize(0.03)
+    leg.SetTextSize(0.02)
     leg.SetTextFont(42)
 
 
 def overlay(hists, ytitle, header, addon):
-    print 'number of histograms = ', len(hists)
+    #print 'number of histograms = ', len(hists)
 
     canvas = TCanvas()
     leg = TLegend(0.2, 0.7, 0.5, 0.9)
@@ -68,25 +72,30 @@ def overlay(hists, ytitle, header, addon):
             if ymax < y:
                 ymax = y
 
-        if ii == 0:
-            hist.Draw("Azp")
-        else:
-            hist.Draw("pzsame")
+    for ii, hist in enumerate(hists):
+        hist.SetMaximum(ymax*1.4)
+        hist.SetMinimum(ymin*0.80)
+	#hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
 
-#        print hist.GetName(), hist.GetTitle()
+    #for ii, hist in enumerate(hists):
+        if ii == 0:
+            hist.Draw("Ap")
+        else:
+            hist.Draw("psame")
+
         legname = hist.GetName()
+	hist.GetPoint(0, x, y)
 
         leg.AddEntry(hist, legname, 'lep')
 
-    for hist in hists:
-        hist.SetMaximum(ymax*2)
-#        hist.SetMinimum(ymin*0.5)
+
 
     leg.Draw()
 
     tex = TLatex(hists[-1].GetXaxis().GetXmin() + 0.01*(hists[-1].GetXaxis().GetXmax() -
-                                                        hists[-1].GetXaxis().GetXmin()), ymax*2.1, addon.replace('tau_', ''))
+                                                        hists[-1].GetXaxis().GetXmin()), ymax*1.4, addon.replace('tau_', ''))
 
+    tex.SetTextAlign(10)
     tex.SetTextFont(42)
     tex.SetTextSize(0.03)
     tex.Draw()
@@ -95,14 +104,41 @@ def overlay(hists, ytitle, header, addon):
     # xshift=0.7
     if tlabel.find('QCD') != -1:
         xshift = 0.6
+    if runtype.find('TTbarTau') != -1:
+        xshift = 0.78
     tex2 = TLatex(hists[-1].GetXaxis().GetXmin() + xshift*(hists[-1].GetXaxis(
-    ).GetXmax() - hists[-1].GetXaxis().GetXmin()), ymax*2.1, tlabel)
+    ).GetXmax() - hists[-1].GetXaxis().GetXmin()), ymax*1.4, tlabel)
 
+    tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
     tex2.SetTextSize(0.03)
     tex2.Draw()
 
-    save(canvas, 'compare_' + runtype + '/' + header)
+    directory1 = ""
+    directory1options = ["byLooseCombinedIsolationDeltaBetaCorr3Hits", "byMediumCombinedIsolationDeltaBetaCorr3Hits", "byTightCombinedIsolationDeltaBetaCorr3Hits", "byPtOutOfCone", "byLooseChargedIsolation", "byMediumChargedIsolation", "byTightChargedIsolation", "byLooseNeutralIsolation", "byMediumNeutralIsolation", "byTightNeutralIsolation", "byLooseNeutralIsolationUnCorr", "byMediumNeutralIsolationUnCorr", "byTightNeutralIsolationUnCorr", "byLooseIsolationMVArun2v1DBoldDMwLT", "byMediumIsolationMVArun2v1DBoldDMwLT", "byTightIsolationMVArun2v1DBoldDMwLT", "againstElectron", "againstMuon", "DecayModeFinding"]
+    directory2 = ""
+    directory2options = {"_1p":"1prong", "_2p":"2prong", "_3p":"3prong", "_modOldDM":"oldDM", "_newDM":"newDM"}
+    directory22options = {"_1ppi0":"1prongpizero", "_3pold":"3prong_old"}
+
+
+    for alpha in directory1options:
+	if alpha in header: directory1 = alpha
+    for alpha,beta in directory2options.items():
+	if alpha in header: directory2 = beta
+    for alpha,beta in directory22options.items():
+	if alpha in header: directory2 = beta
+
+    if "_eta" in header:
+	if directory1: directory1 += "_eta"
+	if directory2: directory2 += "_eta"
+
+    if directory1: save(canvas, 'compare_' + runtype + '/' + directory1 + '/' + header)
+    if directory2: save(canvas, 'compare_' + runtype + '/' + directory2 + '/' + header)
+    if not directory1 and not directory2:  save(canvas, 'compare_' + runtype + '/' + header)
+    if "_eta" in header:
+        save(canvas, 'compare_' + runtype + '/all_eta/' + header)
+    else:
+        save(canvas, 'compare_' + runtype + '/all/' + header)
 
 
 def hoverlay(hists, xtitle, ytitle, name):
@@ -124,7 +160,7 @@ def hoverlay(hists, xtitle, ytitle, name):
         if ymax < hist.GetMaximum():
             ymax = hist.GetMaximum()
 
-    leg = TLegend(0.6, 0.65, 0.91, 0.9)
+    leg = TLegend(0.2, 0.65, 0.91, 0.9)
     configureLegend(leg, 1)
 
     hratios = []
@@ -159,9 +195,12 @@ def hoverlay(hists, xtitle, ytitle, name):
     # xshift=0.7
     if tlabel.find('QCD') != -1:
         xshift = 0.6
+    if runtype.find('TTbarTau') != -1:
+        xshift = 0.78
     tex2 = TLatex(hists[0].GetXaxis().GetXmin(
-    ) + xshift*(hists[0].GetXaxis().GetXmax() - hists[0].GetXaxis().GetXmin()), ymax*1.25, tlabel)
+    ) + xshift*(hists[0].GetXaxis().GetXmax() - hists[0].GetXaxis().GetXmin()), ymax*1.2, tlabel)
 
+    tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
     # tex2.SetTextSize(0.03)
     tex2.SetTextSize(0.043)
@@ -190,12 +229,12 @@ def hoverlay(hists, xtitle, ytitle, name):
 
     c.cd()          # Go back to the main canvas
 
-    save(c, 'compare_' + runtype + '/hist_' + name)
+    save(c, 'compare_' + runtype + '/histograms/hist_' + name)
 
 
 def makeEffPlotsVars(tree, varx, vary, sel, nbinx, xmin, xmax, nbiny, ymin, ymax, xtitle, ytitle, leglabel=None, header='', addon='', option='pt', marker=20, col=1):
 
-    binning = [20, 30, 40, 50, 60, 70, 80, 100, 150, 200]
+    binning = [20, 200] if args.onebin else [20, 30, 40, 50, 60, 70, 80, 100, 150, 200]
 
     if option == 'pt':
         _hist_ = TH1F('h_effp_' + addon, 'h_effp' + addon,
@@ -211,7 +250,7 @@ def makeEffPlotsVars(tree, varx, vary, sel, nbinx, xmin, xmax, nbiny, ymin, ymax
     tree.Draw(varx + ' >> ' + _ahist_.GetName(), sel + ' && ' + vary)
 
     g_efficiency = TGraphAsymmErrors()
-    g_efficiency.BayesDivide(_ahist_, _hist_)
+    g_efficiency.Divide(_ahist_, _hist_, "cl=0.683 b(1,1) mode")
     g_efficiency.GetXaxis().SetTitle(xtitle)
     g_efficiency.GetYaxis().SetTitle('efficiency')
     g_efficiency.GetYaxis().SetNdivisions(507)
@@ -233,16 +272,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
-    parser.add_argument('--releases', help='comma separated list of releases', default='CMSSW_9_4_0_pre1,CMSSW_9_4_0_pre2')
+    parser.add_argument('-r', '--releases', help='comma separated list of releases', default='CMSSW_9_4_0_pre1,CMSSW_9_4_0_pre2')
+    parser.add_argument('-g', '--globaltag', help='comma separated global tags of releases', default='93X_mc2017_realistic_v3-v1,94X_mc2017_realistic_v1-v1')
+    parser.add_argument('-p', '--part',  help='Make WP plots(1), first half of histogram plots(2), second half of histogram plots(3), or everything at once(0) (This part needs to be split up to avoid a crash that happens for some reason)', default=0)
+    parser.add_argument('-b', '--onebin', action="store_true",  help='Plot inclusive efficiencies by only using one bin', default=False)
     
     args = parser.parse_args()
-
+    
+    part = int(args.part)
     runtype = args.runtype
     print 'Producing plots for runtype', runtype
     
     releases = args.releases.split(',')
+    globaltags = args.globaltag.split(',')
     
     print 'Releases', releases
+    print 'Global tags', globaltags
     
 
     tlabel = 'Z #rightarrow #tau#tau'
@@ -281,50 +326,57 @@ if __name__ == '__main__':
         {'col': 2, 'marker': 21, 'width': 2},
         {'col': 4, 'marker': 21, 'width': 2},
         {'col': 7, 'marker': 24, 'width': 2},
+        {'col': 41, 'marker': 20, 'width': 2},
+        {'col': 1, 'marker': 26, 'width': 2},
+        {'col': 6, 'marker': 22, 'width': 2},
     ]
     
     sampledict = {}
-    for i_sample, release in enumerate(releases):
+    for i_sample, release in enumerate(globaltags):
         sampledict[release] = styles[i_sample]
-        tfile = sampledict[release]['file'] = TFile('Myroot_{}_{}.root'.format(release, runtype))
+        tfile = sampledict[release]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[i_sample], release, runtype))
         sampledict[release]['tree'] = tfile.Get('per_tau')
 
-    for hname, hdict in sorted(vardict.iteritems()):
+    if part<2:
+        for hname, hdict in vardict.items():
 
-        hists = []
-        histseta = []
+            hists = []
+            histseta = []
 
-        for rel, rdict in sorted(sampledict.iteritems()):
-            tree = rdict['tree']
+            for rel, rdict in sampledict.items():
+                tree = rdict['tree']
 
-            num_sel = reco_cut
-            den_sel = '1'
-
-            if hname.find('against') != -1:
-                #num_sel = '1'
                 num_sel = reco_cut
-                den_sel = reco_cut + ' && ' + loose_id
+                den_sel = '1'
 
-            hists.append(makeEffPlotsVars(tree, 'tau_genpt', num_sel + '&&' + hdict['var'], den_sel, 30, 0, 300, hdict[
-                         'nbin'], hdict['min'], hdict['max'], xlabel, hdict['title'], '', rel, rel, 'pt', rdict['marker'], rdict['col']))
-            histseta.append(makeEffPlotsVars(tree, 'tau_geneta', num_sel + '&&' + hdict['var'] + '&& tau_pt>20', den_sel + '&& tau_pt>20', 12, -2.4, 2.4, hdict[
-                            'nbin'], hdict['min'], hdict['max'], xlabel_eta, hdict['title'], '', rel, rel, 'eta', rdict['marker'], rdict['col']))  # FIXME: use pt>20 or >30
+                if hname.find('against') != -1:
+                    #num_sel = '1'
+                    num_sel = reco_cut
+                    den_sel = reco_cut + ' && ' + loose_id
+
+                hists.append(makeEffPlotsVars(tree, 'tau_genpt', num_sel + '&&' + hdict['var'], den_sel + '&& abs(tau_eta) < 2.3', 30, 0, 300, hdict['nbin'], hdict['min'], hdict['max'], xlabel, hdict['title'], '', rel, rel, 'pt', rdict['marker'], rdict['col']))
+                histseta.append(makeEffPlotsVars(tree, 'tau_geneta', num_sel + '&&' + hdict['var'], den_sel + '&& tau_pt>20', 12, -2.4, 2.4, hdict['nbin'], hdict['min'], hdict['max'], xlabel_eta, hdict['title'], '', rel, rel, 'eta', rdict['marker'], rdict['col']))
 
 
 
-        overlay(hists, hname, hname, hdict['title'])
-        overlay(histseta, hname, hname+'_eta', hdict['title']+'_eta')
+            overlay(hists, hname, hname, hdict['title'])
+            overlay(histseta, hname, hname+'_eta', hdict['title']+'_eta')
 
-    
-
-    for hname, hdict in sorted(hvardict.iteritems()):
+    if part==1: exit()
+    i = 0
+    for hname, hdict in hvardict.items():
+	i+=1
+        if part==2 and i>len(hvardict.items())/2:
+            exit()
+        elif part==3 and i<=len(hvardict.items())/2:
+            continue
 
         hists = []
 
         if runtype != 'ZTT' and runtype != 'TTbarTau' and hname.find('pt_resolution') != -1:
             continue
 
-        for rel, rdict in sorted(sampledict.iteritems()):
+        for rel, rdict in sampledict.items():
             tree = rdict['tree']
 
             hist = TH1F('h_' + hname + '_' + rel, 'h_' + hname +

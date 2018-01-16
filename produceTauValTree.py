@@ -91,10 +91,10 @@ if __name__ == '__main__':
 
     parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
 
-    parser.add_argument('--relval',  help='Release string', default='CMSSW_9_4_0_pre2')
-    parser.add_argument('--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
-    parser.add_argument('--maxEvents',  help='Global tag', default=-1)
-    parser.add_argument('--useRecoJets',  help='Global tag', default=False)
+    parser.add_argument('-r', '--relval',  help='Release string', default='CMSSW_9_4_0_pre2')
+    parser.add_argument('-g', '--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
+    parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1)
+    parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
 
     args = parser.parse_args()
         
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     filelist = getFilesFromEOS(path)
 
     if len(filelist) == 0:
-        print 'Sample', RelVal, runtype, 'does not exist'
+        print 'Sample', RelVal, runtype, 'does not exist in', path
         sys.exit(0)
 
     events = Events(filelist)
@@ -136,9 +136,9 @@ if __name__ == '__main__':
     else:
         print 'All events will be analyzed (maxEvents = %i)' % maxEvents
 
-    outputname = 'Myroot_' + RelVal + '_' + runtype + '.root'
+    outputname = 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + '.root'
     if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'):
-        outputname = 'Myroot_' + RelVal + '_' + runtype + 'genJets.root'
+        outputname = 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + 'genJets.root'
     file = ROOT.TFile(outputname, 'recreate')
 
     h_ngen = ROOT.TH1F("h_ngen", "h_ngen", 10, 0, 10)
