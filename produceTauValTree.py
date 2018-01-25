@@ -11,6 +11,7 @@ import re
 import argparse
 import numpy as num
 
+from das_client import get_data, x509
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
@@ -85,6 +86,28 @@ def getFilesFromEOS(path):
          x for x in eostools.listFiles(sub_path) if re.match('.*root', x)]
     return files
 
+def getFilesFromDAS(release, runtype, globalTag):
+    '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
+    print "Getting files from DAS. May take a while...."
+    host = 'https://cmsweb.cern.ch'
+    capath = '/etc/grid-security/certificates'
+
+    query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
+    output = get_data(host = host,
+                      query=query,
+                      idx=0,
+                      limit=0,
+                      debug=0,
+                      cert=x509(),
+                      capath=capath )
+    files = []
+
+    for entry in output["data"]:
+        file = "root://cms-xrd-global.cern.ch/"+str( entry["file"][0]["name"] )
+        if "/".join([release,runtype,"MINIAODSIM",globalTag]) in file:
+            files.append(file)
+
+    return files
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -95,6 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
     parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1)
     parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
+    parser.add_argument('-s', '--storageSite', help="Choose between samples store on eos or DAS",  choices=['eos','das'], default='eos')
 
     args = parser.parse_args()
         
@@ -102,6 +126,7 @@ if __name__ == '__main__':
     RelVal = args.relval
     globalTag = args.globalTag
     useRecoJets = args.useRecoJets
+    storageSite = args.storageSite
 
     runtype = args.runtype
 
@@ -109,6 +134,7 @@ if __name__ == '__main__':
     print 'runtype', runtype
     print 'RelVal', RelVal
     print 'globalTag', globalTag
+    print 'storageSite', storageSite
 
     filelist = []
     
@@ -123,7 +149,8 @@ if __name__ == '__main__':
 
     path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
 
-    filelist = getFilesFromEOS(path)
+    if storageSite == "eos": filelist = getFilesFromEOS(path)
+    if storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
 
     if len(filelist) == 0:
         print 'Sample', RelVal, runtype, 'does not exist in', path
