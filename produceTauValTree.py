@@ -77,13 +77,17 @@ def visibleP4(gen):
     return p4
 
 
-def getFilesFromEOS(path):
+def getFilesFromEOS(path, cmseospath=True):
     '''Give path in form /store/relval/CMSSW_9_4_0_pre2/...'''
-    dirs = eostools.listFiles('/eos/cms'+path)
+
+    dirs = eostools.listFiles(cmseospath * '/eos/cms' + path)
+
     files = []
     for sub_path in dirs:
-        files += ['root://eoscms.cern.ch/' +
-         x for x in eostools.listFiles(sub_path) if re.match('.*root', x)]
+        print "\tsub_path:", sub_path
+        files += [cmseospath * 'root://eoscms.cern.ch/' + x for x in eostools.listFiles(sub_path) if re.match('.*root', x)]
+
+    print "files:", files
     return files
 
 def getFilesFromDAS(release, runtype, globalTag):
@@ -118,7 +122,8 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
     parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1)
     parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
-    parser.add_argument('-s', '--storageSite', help="Choose between samples store on eos or DAS",  choices=['eos','das'], default='eos')
+    parser.add_argument('-s', '--storageSite', help="Choose between samples store on eos or DAS or in private local folder",  choices=['eos','das', 'loc'], default='eos')
+    parser.add_argument('-l', '--localdir', help="Local dir where the samples are looked up",  default='/eos/user/o/ohlushch/relValMVA/')
 
     args = parser.parse_args()
         
@@ -127,6 +132,7 @@ if __name__ == '__main__':
     globalTag = args.globalTag
     useRecoJets = args.useRecoJets
     storageSite = args.storageSite
+    localdir = args.localdir
 
     runtype = args.runtype
 
@@ -150,12 +156,14 @@ if __name__ == '__main__':
     path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
 
     if storageSite == "eos": filelist = getFilesFromEOS(path)
-    if storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
+    elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
+    elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
 
     if len(filelist) == 0:
         print 'Sample', RelVal, runtype, 'does not exist in', path
         sys.exit(0)
 
+    print "filelist:", filelist
     events = Events(filelist)
     print len(filelist), 'files will be analyzed'
     if maxEvents > 0:
