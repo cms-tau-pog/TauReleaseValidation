@@ -351,50 +351,31 @@ if __name__ == '__main__':
         vertices = vertexH.product()
         puInfo = puH.product()
         genParticles = genParticlesH.product()
-        jets1 = [jet for jet in jetH.product() if jet.pt() > 20 and abs(
-            jet.eta()) < 2.3 and jet.pt() < 200.5]
-        genJets1 = [jet for jet in genJetH.product() if jet.pt(
-        ) > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
+        jets1    = [jet for jet in jetH.product()    if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
+        genJets1 = [jet for jet in genJetH.product() if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
 
-        genTaus = [p for p in genParticles if abs(
-            p.pdgId()) == 15 and p.isPromptDecayed()]
-        genElectrons = [p for p in genParticles if(abs(p.pdgId()) == 11 and p.status() == 1 and (
-            p.isPromptFinalState() or p.isDirectPromptTauDecayProductFinalState()) and p.pt() > 20 and abs(p.eta()) < 2.3)]
-        genMuons = [p for p in genParticles if (abs(p.pdgId()) == 13 and p.status() == 1 and (
-            p.isPromptFinalState() or p.isDirectPromptTauDecayProductFinalState()) and p.pt() > 20 and abs(p.eta()) < 2.3)]
+        genTaus = [p for p in genParticles if abs(p.pdgId()) == 15 and p.isPromptDecayed()]
+
+        accompanyingLeptonCondition = lambda p, pid: ( abs(p.pdgId()) == pid \
+            and p.status() == 1 \
+            and (p.isPromptFinalState() or p.isDirectPromptTauDecayProductFinalState()) \
+            and p.pt() > 20 \
+            and abs(p.eta()) < 2.3)
+
+        genElectrons = [p for p in genParticles if accompanyingLeptonCondition(p, 11)]
+        genMuons     = [p for p in genParticles if accompanyingLeptonCondition(p, 13)]
+
         # gen leptons to clean jets with respect to them (e.g. for TTBar)
-        genLeptons = [p for p in genParticles if p.status() == 1 and p.pt() > 15
-                      and (((abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
+        genLeptons = [p for p in genParticles if \
+            p.status() == 1 and p.pt() > 15
+            and (( (abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) \
+                or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
 
-        jets = []
-        for jet in jets1:
-            keepjet = True
-            for lep in genLeptons:
-                if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
-                    keepjet = False
-            if keepjet:
-                jets.append(jet)
-        if len(jets1) != len(jets):
-            print 'genLep', len(genLeptons), 'jets1: ', len(jets1), 'jets', len(jets)
-            if runtype != 'ZTT' and runtype != 'ZEE' and runtype != 'ZMM' and runtype != 'TTbarTau':
-                for lep in genLeptons:
-                    print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
-        genJets = []
-        for jet in genJets1:
-            keepjet = True
-            for lep in genLeptons:
-                if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
-                    keepjet = False
-            if keepjet:
-                genJets.append(jet)
-        if len(genJets1) != len(genJets):
-            print 'genLep', len(genLeptons), 'genJets1: ', len(genJets1), 'genJets', len(genJets)
-            if runtype != 'ZTT' and runtype != 'ZEE' and runtype != 'ZMM' and runtype != 'TTbarTau':
-                for lep in genLeptons:
-                    print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
+        print "Jets processing:"
+        jets = GetNonTauJets(jets1, genLeptons, runtype, debug)
 
-        ##########
-        refObjs = []
+        print "GenJets processing:"
+        genJets = GetNonTauJets(genJets1, genLeptons, runtype, debug)
 
         refObjs = []
         if runtype in ['ZTT', 'TTbarTau']:
