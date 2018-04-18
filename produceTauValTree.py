@@ -100,28 +100,54 @@ def getFilesFromDAS(release, runtype, globalTag):
     result = subprocess.check_output("dasgoclient --query='" + "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, ) + "'", shell=True)
     files =  ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
 
+    print "files:", files
     return files
+
+def GetNonTauJets(jets1, genLeptons, runtype='ZTT', debug=False):
+    if jets1 is None or genLeptons is None:
+        print "genLeptons or initial list of/and jets is empty"
+        return []
+
+    jets = []
+    for jet in jets1:
+        keepjet = True
+        for lep in genLeptons:
+            if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
+                keepjet = False
+                break
+
+        if keepjet: jets.append(jet)
+
+    if debug and len(jets1) != len(jets):
+        print 'genLep', len(genLeptons), 'jets1: ', len(jets1), 'jets', len(jets)
+
+        if runtype not in  ['ZTT', 'ZEE', 'ZMM', 'TTbarTau']:
+            for lep in genLeptons:
+                print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
+    return jets
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
 
-    parser.add_argument('-r', '--relval',  help='Release string', default='CMSSW_9_4_0_pre2')
+    parser.add_argument('-r', '--release',  help='Release string', default='CMSSW_9_4_0_pre2')
     parser.add_argument('-g', '--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
-    parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1)
+    parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1, type=int)
     parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
     parser.add_argument('-s', '--storageSite', help="Choose between samples store on eos or DAS or in private local folder",  choices=['eos','das', 'loc'], default='eos')
     parser.add_argument('-l', '--localdir', help="Local dir where the samples are looked up",  default='/eos/user/o/ohlushch/relValMVA/')
+    parser.add_argument('-d', '--debug', help="Debug option", action="store_true",  default=False)
 
     args = parser.parse_args()
         
     maxEvents = args.maxEvents
-    RelVal = args.relval
+    RelVal = args.release
     globalTag = args.globalTag
     useRecoJets = args.useRecoJets
     storageSite = args.storageSite
     localdir = args.localdir
+    debug = args.debug
 
     runtype = args.runtype
 
@@ -267,7 +293,8 @@ if __name__ == '__main__':
                         '/'+('I' if var.type == int else 'D'))
 
     evtid = 0
-    doPrint = True  # FIXME, for debug
+
+    NMatchedTaus = 0
 
     tauH = Handle('vector<pat::Tau>')
     vertexH = Handle('std::vector<reco::Vertex>')
@@ -423,10 +450,6 @@ if __name__ == '__main__':
                 all_var_dict['tau_geneta'].fill(refObj.eta())
                 all_var_dict['tau_genphi'].fill(refObj.phi())
 
-            tau, _dr_ = bestMatch(refObj, taus)
-            if _dr_ > 0.5:
-                tau = None
-
             tau_vtxTovtx_dz = 99
             for i in range(0, len(vertices)-1):
                 for j in range(i + 1, len(vertices)):
@@ -437,8 +460,12 @@ if __name__ == '__main__':
 
             all_var_dict['tau_vtxTovtx_dz'].fill(tau_vtxTovtx_dz)
 
-            # Fill reco-tau variables if it exists...
-            if tau != None:
+            tau, _dr_ = bestMatch(refObj, taus)
+            if _dr_ < 0.5:
+                # Fill reco-tau variables if it exists...
+                NMatchedTaus += 1
+
+                print tau
 
                 all_var_dict['tau_dm'].fill(tau.decayMode())
                 all_var_dict['tau_dm_rough'].fill(returnRough(tau.decayMode()))
@@ -570,15 +597,12 @@ if __name__ == '__main__':
                 all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
                 all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
                 all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
-                if doPrint:
+                if debug:
                     print 'Release ', RelVal, ': reading Run-2 MVA-based  discriminants'
                     print all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw']
                     print all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT']
                     print all_var_dict['tau_againstElectronMVA6raw']
                     print all_var_dict['tau_againstElectronMediumMVA6']
-                    doPrint = False
-
-            tau_tree.Fill()
 
                     print all_var_dict['tau_mass']
                     # debug = False
