@@ -3,7 +3,7 @@ import re
 
 def addArguments(parser):
     # for produceTauValTree.py
-    parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
+    parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
     parser.add_argument('-r', '--release', default='CMSSW_9_4_0_pre2',  help='Release string [Default: %(default)s]')
     parser.add_argument('-g', '--globalTag', default='PU25ns_94X_mc2017_realistic_v1-v1',  help='Global tag [Default: %(default)s]')
     parser.add_argument('-n', '--maxEvents', default=-1, type=int,  help='Number of events that will be analyzed (-1 = all events) [Default: %(default)s]')
@@ -12,8 +12,9 @@ def addArguments(parser):
     parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")
     parser.add_argument('-i', '--inputfile', default='', help="Single file location for fast checks [Default: %(default)s]")
     parser.add_argument('-d', '--debug', default=False, help="Debug option [Default: %(default)s]", action="store_true")
-    parser.add_argument('-m', '--mvaid', default=["2017v1", "2017v2", "newDM2017v2", "dR0p32017v2", "2016v1", "newDM2016v1"], nargs='*', help="Select final state(s) for measurement. This agument can be set multiple times. [Default: %(default)s]")
-    parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. [Default: %(default)s]")
+    parser.add_argument('-m', '--mvaid', default=["2017v1", "2016v1", "newDM2016v1"], nargs='*',
+        help="Select final state(s) for measurement. This agument can be set multiple times. Possible options: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
+    parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. Possible: NewTauIDsEmbedded; [Default: %(default)s].")
     # for compare.py
     parser.add_argument('-p', '--part',  help='Make WP plots(1), first half of histogram plots(2), \
         second half of histogram plots(3), or everything at once(0) \

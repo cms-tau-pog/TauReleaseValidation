@@ -10,6 +10,7 @@ import sys
 import re
 import argparse
 import numpy as num
+import copy
 
 from das_client import get_data, x509
 from DataFormats.FWLite import Events, Handle
@@ -17,6 +18,7 @@ from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 
 import eostools
+from relValTools import *
 
 ROOT.gROOT.SetBatch(True)
 
@@ -39,25 +41,17 @@ class Var:
     def __str__(self):
         return 'Var: name={}, type={}, val={:.2f}'.format(self.name, self.type, self.storage[0])
 
-
 def returnRough(dm):
-    if dm in [0]:
-        return 0
-    elif dm in [1, 2]:
-        return 1
-    elif dm in [5, 6]:
-        return 2
-    elif dm in [10]:
-        return 3
-    elif dm in [11]:
-        return 4
+    if dm in [0]: return 0
+    elif dm in [1, 2]: return 1
+    elif dm in [5, 6]: return 2
+    elif dm in [10]:  return 3
+    elif dm in [11]: return 4
     else:
         return -1
 
-
 def finalDaughters(gen, daughters=None):
-    if daughters is None:
-        daughters = []
+    if daughters is None: daughters = []
     for i in range(gen.numberOfDaughters()):
         daughter = gen.daughter(i)
         if daughter.numberOfDaughters() == 0:
@@ -67,78 +61,36 @@ def finalDaughters(gen, daughters=None):
 
     return daughters
 
-
 def visibleP4(gen):
     final_ds = finalDaughters(gen)
 
-    p4 = sum((d.p4() for d in final_ds if abs(d.pdgId()) not in [
-             12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
-
-    return p4
-
-
-def getFilesFromEOS(path, cmseospath=True):
-    '''Give path in form /store/relval/CMSSW_9_4_0_pre2/...'''
-
-    dirs = eostools.listFiles(cmseospath * '/eos/cms' + path)
-
-    files = []
-    for sub_path in dirs:
-        print "\tsub_path:", sub_path
-        files += [cmseospath * 'root://eoscms.cern.ch/' + x for x in eostools.listFiles(sub_path) if re.match('.*root', x)]
-
-    print "files:", files
-    return files
-
-def getFilesFromDAS(release, runtype, globalTag):
-    '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
-    print "Getting files from DAS. May take a while...."
-
-    query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
-
-    import subprocess
-    result = subprocess.check_output("dasgoclient --query='" + "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, ) + "'", shell=True)
-    files =  ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
-
-    print "files:", files
-    return files
+    return sum((d.p4() for d in final_ds if abs(d.pdgId()) not in [12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
 
 def GetNonTauJets(jets1, genLeptons, runtype='ZTT', debug=False):
-    if jets1 is None or genLeptons is None:
-        print "genLeptons or initial list of/and jets is empty"
-        return []
-
     jets = []
-    for jet in jets1:
-        keepjet = True
-        for lep in genLeptons:
-            if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
-                keepjet = False
-                break
 
-        if keepjet: jets.append(jet)
-
-    if debug and len(jets1) != len(jets):
-        print 'genLep', len(genLeptons), 'jets1: ', len(jets1), 'jets', len(jets)
-
-        if runtype not in  ['ZTT', 'ZEE', 'ZMM', 'TTbarTau']:
+    if jets1 is None or genLeptons is None: print "genLeptons or initial list of/and jets is empty"
+    else:
+        for jet in jets1:
+            keepjet = True
             for lep in genLeptons:
-                print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
+                if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
+                    keepjet = False
+                    break
+
+            if keepjet: jets.append(jet)
+
+        if debug and len(jets1) != len(jets):
+            print 'genLep', len(genLeptons), 'jets1: ', len(jets1), 'jets', len(jets)
+
+            if runtype not in  ['ZTT', 'ZEE', 'ZMM', 'TTbarTau']:
+                for lep in genLeptons:
+                    print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
     return jets
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
-
-    parser.add_argument('-r', '--release',  help='Release string', default='CMSSW_9_4_0_pre2')
-    parser.add_argument('-g', '--globalTag',  help='Global tag', default='PU25ns_94X_mc2017_realistic_v1-v1')
-    parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1, type=int)
-    parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
-    parser.add_argument('-s', '--storageSite', help="Choose between samples store on eos or DAS or in private local folder",  choices=['eos','das', 'loc'], default='eos')
-    parser.add_argument('-l', '--localdir', help="Local dir where the samples are looked up",  default='/eos/user/o/ohlushch/relValMVA/')
-    parser.add_argument('-d', '--debug', help="Debug option", action="store_true",  default=False)
-
+    addArguments(parser)
     args = parser.parse_args()
         
     maxEvents = args.maxEvents
@@ -147,7 +99,11 @@ if __name__ == '__main__':
     useRecoJets = args.useRecoJets
     storageSite = args.storageSite
     localdir = args.localdir
+    tauCollection = args.tauCollection
+    mvaid = args.mvaid
+    if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
     debug = args.debug
+    inputfile = args.inputfile
 
     runtype = args.runtype
 
@@ -158,25 +114,19 @@ if __name__ == '__main__':
     print 'storageSite', storageSite
 
     filelist = []
-    
-    runtype_to_sample = {
-        'ZTT':'RelValZTT_13',
-        'ZMM':'RelValZpMM_13',
-        'QCD':'RelValQCD_FlatPt_15_3000HS_13',
-        'TTbar':'RelValTTbar_13',
-        'TTbarTau':'RelValTTbar_13',
-        'ZpTT':'RelValZpTT_1500_13'
-    }
 
-    path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
+    if inputfile != "":
+        filelist = [inputfile]
+    else:
+        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
 
-    if storageSite == "eos": filelist = getFilesFromEOS(path)
-    elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
-    elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
+        if storageSite == "eos": filelist = getFilesFromEOS(path)
+        elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
+        elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
 
-    if len(filelist) == 0:
-        print 'Sample', RelVal, runtype, 'does not exist in', path
-        sys.exit(0)
+        if len(filelist) == 0:
+            print 'Sample', RelVal, runtype, 'does not exist in', path
+            sys.exit(0)
 
     print "filelist:", filelist
     events = Events(filelist)
@@ -261,20 +211,6 @@ if __name__ == '__main__':
         Var('tau_againstElectronTightMVA6', int),
         Var('tau_againstElectronVTightMVA6', int),
         Var('tau_againstElectronMVA6raw', float),
-        Var('tau_byIsolationMVArun2v1DBoldDMwLTraw', float),
-        Var('tau_byVLooseIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byLooseIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byMediumIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byVTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byVVTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byIsolationMVArun2v1PWoldDMwLTraw', float),
-        Var('tau_byLooseIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byMediumIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byTightIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int),
         Var('tau_dxy', float),
         Var('tau_dxy_err', float),
         Var('tau_dxy_sig', float),
@@ -284,13 +220,46 @@ if __name__ == '__main__':
         Var('tau_flightLength', float),
         Var('tau_flightLength_sig', float)
     ]
+    if "2017v2" in mvaid:
+        all_vars.extend([Var("tau_byIsolationMVArun2017v2DBoldDMwLTraw2017", float),
+            Var("tau_byVVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byMediumIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byTightIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byVTightIsolationMVArun2017v2DBoldDMwLT2017", int),
+            Var("tau_byVVTightIsolationMVArun2017v2DBoldDMwLT2017", int)])
+    if "2017v1" in mvaid:
+        all_vars.extend([Var("tau_byIsolationMVArun2017v1DBoldDMwLTraw2017", float),
+            Var("tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byMediumIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byTightIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byVTightIsolationMVArun2017v1DBoldDMwLT2017", int),
+            Var("tau_byVVTightIsolationMVArun2017v1DBoldDMwLT2017", int)])
+    if "2016v1" in mvaid:
+        all_vars.extend([Var('tau_byIsolationMVArun2v1DBoldDMwLTraw', float),
+            Var('tau_byVLooseIsolationMVArun2v1DBoldDMwLT', int),
+            Var('tau_byLooseIsolationMVArun2v1DBoldDMwLT', int),
+            Var('tau_byMediumIsolationMVArun2v1DBoldDMwLT', int),
+            Var('tau_byTightIsolationMVArun2v1DBoldDMwLT', int),
+            Var('tau_byVTightIsolationMVArun2v1DBoldDMwLT', int),
+            Var('tau_byVVTightIsolationMVArun2v1DBoldDMwLT', int)])
+    if "newDM2016v1" in mvaid:
+        all_vars.extend([Var('tau_byIsolationMVArun2v1PWoldDMwLTraw', float),
+            Var('tau_byLooseIsolationMVArun2v1PWoldDMwLT', int),
+            Var('tau_byMediumIsolationMVArun2v1PWoldDMwLT', int),
+            Var('tau_byTightIsolationMVArun2v1PWoldDMwLT', int),
+            Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
+            Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
+            Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int)])
 
     all_var_dict = {var.name: var for var in all_vars}
 
     for var in all_vars:
         var.storage = num.zeros(1, dtype=var.type)
-        tau_tree.Branch(var.name, var.storage, var.name +
-                        '/'+('I' if var.type == int else 'D'))
+        tau_tree.Branch(var.name, var.storage, var.name + '/'+('I' if var.type == int else 'D'))
 
     evtid = 0
 
@@ -317,7 +286,7 @@ if __name__ == '__main__':
         if evtid > maxEvents and maxEvents > 0:
             break
 
-        event.getByLabel("slimmedTaus", tauH)
+        event.getByLabel(tauCollection, tauH)
         event.getByLabel("offlineSlimmedPrimaryVertices", vertexH)
         event.getByLabel("slimmedAddPileupInfo", puH)
         event.getByLabel('prunedGenParticles', genParticlesH)
@@ -563,21 +532,40 @@ if __name__ == '__main__':
                 all_var_dict['tau_againstElectronVTightMVA6'].fill(tau.tauID('againstElectronVTightMVA6'))
                 all_var_dict['tau_againstElectronMVA6raw'].fill(tau.tauID('againstElectronMVA6Raw'))
 
-                all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBoldDMwLTraw'))
-                all_var_dict['tau_byLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBoldDMwLT'))
-
-                all_var_dict['tau_byIsolationMVArun2v1PWoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1PWoldDMwLTraw'))
-                all_var_dict['tau_byLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byMediumIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
+                if "2016v1" in mvaid:
+                    all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBoldDMwLTraw'))
+                    all_var_dict['tau_byLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBoldDMwLT'))
+                    all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBoldDMwLT'))
+                    all_var_dict['tau_byTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBoldDMwLT'))
+                    all_var_dict['tau_byVLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBoldDMwLT'))
+                    all_var_dict['tau_byVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBoldDMwLT'))
+                    all_var_dict['tau_byVVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBoldDMwLT'))
+                if "newDM2016v1" in mvaid:
+                    all_var_dict['tau_byIsolationMVArun2v1PWoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1PWoldDMwLTraw'))
+                    all_var_dict['tau_byLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1PWoldDMwLT'))
+                    all_var_dict['tau_byMediumIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1PWoldDMwLT'))
+                    all_var_dict['tau_byTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1PWoldDMwLT'))
+                    all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
+                    all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
+                    all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
+                if "2017v1" in mvaid:
+                    all_var_dict["tau_byIsolationMVArun2017v1DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v1DBoldDMwLTraw2017'))
+                    all_var_dict["tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byLooseIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byMediumIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byMediumIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byTightIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byVTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVTightIsolationMVArun2017v1DBoldDMwLT2017'))
+                    all_var_dict["tau_byVVTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVTightIsolationMVArun2017v1DBoldDMwLT2017'))
+                if "2017v2" in mvaid:
+                    all_var_dict["tau_byIsolationMVArun2017v2DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v2DBoldDMwLTraw2017'))
+                    all_var_dict["tau_byVVLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byVLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVLooseIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byLooseIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byMediumIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byMediumIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byTightIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVTightIsolationMVArun2017v2DBoldDMwLT2017'))
+                    all_var_dict["tau_byVVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVVTightIsolationMVArun2017v2DBoldDMwLT2017'))
                 if debug:
                     print 'Release ', RelVal, ': reading Run-2 MVA-based  discriminants'
                     print all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw']
