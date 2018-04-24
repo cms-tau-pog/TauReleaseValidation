@@ -197,6 +197,20 @@ if __name__ == '__main__':
         Var('tau_byLooseCombinedIsolationDeltaBetaCorr3Hits', int),
         Var('tau_byMediumCombinedIsolationDeltaBetaCorr3Hits', int),
         Var('tau_byTightCombinedIsolationDeltaBetaCorr3Hits', int),
+        Var('tau_byIsolationMVArun2v1DBoldDMwLTraw', float),
+        Var('tau_byVLooseIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byLooseIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byMediumIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byTightIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byVTightIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byVVTightIsolationMVArun2v1DBoldDMwLT', int),
+        Var('tau_byIsolationMVArun2v1PWoldDMwLTraw', float),
+        Var('tau_byLooseIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byMediumIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byTightIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int),
         Var('tau_chargedIsoPtSum', float),
         Var('tau_neutralIsoPtSum', float),
         Var('tau_puCorrPtSum', float),
@@ -220,6 +234,7 @@ if __name__ == '__main__':
         Var('tau_flightLength', float),
         Var('tau_flightLength_sig', float)
     ]
+
     if "2017v2" in mvaid:
         all_vars.extend([Var("tau_byIsolationMVArun2017v2DBoldDMwLTraw2017", float),
             Var("tau_byVVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
@@ -239,21 +254,30 @@ if __name__ == '__main__':
             Var("tau_byVTightIsolationMVArun2017v1DBoldDMwLT2017", int),
             Var("tau_byVVTightIsolationMVArun2017v1DBoldDMwLT2017", int)])
     if "2016v1" in mvaid:
-        all_vars.extend([Var('tau_byIsolationMVArun2v1DBoldDMwLTraw', float),
-            Var('tau_byVLooseIsolationMVArun2v1DBoldDMwLT', int),
-            Var('tau_byLooseIsolationMVArun2v1DBoldDMwLT', int),
-            Var('tau_byMediumIsolationMVArun2v1DBoldDMwLT', int),
-            Var('tau_byTightIsolationMVArun2v1DBoldDMwLT', int),
-            Var('tau_byVTightIsolationMVArun2v1DBoldDMwLT', int),
-            Var('tau_byVVTightIsolationMVArun2v1DBoldDMwLT', int)])
+        all_vars.extend([Var("tau_byIsolationMVArun2v1DBoldDMwLTraw2016", float),
+        Var("tau_byVLooseIsolationMVArun2v1DBoldDMwLT2016", int),
+        Var("tau_byLooseIsolationMVArun2v1DBoldDMwLT2016", int),
+        Var("tau_byMediumIsolationMVArun2v1DBoldDMwLT2016", int),
+        Var("tau_byTightIsolationMVArun2v1DBoldDMwLT2016", int),
+        Var("tau_byVTightIsolationMVArun2v1DBoldDMwLT2016", int),
+        Var("tau_byVVTightIsolationMVArun2v1DBoldDMwLT2016", int)])
     if "newDM2016v1" in mvaid:
-        all_vars.extend([Var('tau_byIsolationMVArun2v1PWoldDMwLTraw', float),
-            Var('tau_byLooseIsolationMVArun2v1PWoldDMwLT', int),
-            Var('tau_byMediumIsolationMVArun2v1PWoldDMwLT', int),
-            Var('tau_byTightIsolationMVArun2v1PWoldDMwLT', int),
-            Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
-            Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
-            Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int)])
+        all_vars.extend([Var("tau_byIsolationMVArun2v1DBnewDMwLTraw2016", float),
+        Var("tau_byVLooseIsolationMVArun2v1DBnewDMwLT2016", int),
+        Var("tau_byLooseIsolationMVArun2v1DBnewDMwLT2016", int),
+        Var("tau_byMediumIsolationMVArun2v1DBnewDMwLT2016", int),
+        Var("tau_byTightIsolationMVArun2v1DBnewDMwLT2016", int),
+        Var("tau_byVTightIsolationMVArun2v1DBnewDMwLT2016", int),
+        Var("tau_byVVTightIsolationMVArun2v1DBnewDMwLT2016", int)])
+    if "dR0p32017v2" in mvaid:
+        all_vars.extend([Var("tau_byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017", float),
+        Var("tau_byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+        Var("tau_byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int)])
 
     all_var_dict = {var.name: var for var in all_vars}
 
@@ -283,8 +307,7 @@ if __name__ == '__main__':
 
         if evtid % 1000 == 0:
             print 'Event ', evtid, 'processed'
-        if evtid > maxEvents and maxEvents > 0:
-            break
+        if evtid > maxEvents and maxEvents > 0: break
 
         event.getByLabel(tauCollection, tauH)
         event.getByLabel("offlineSlimmedPrimaryVertices", vertexH)
@@ -292,6 +315,7 @@ if __name__ == '__main__':
         event.getByLabel('prunedGenParticles', genParticlesH)
         event.getByLabel("slimmedJets", jetH)
         event.getByLabel("slimmedGenJets", genJetH)
+        # event.getByLabel("slimmedGenJets", reRunTauID)
 
         event.getByLabel("packedPFCandidates", candH)
         pfCands = candH.product()
@@ -373,7 +397,6 @@ if __name__ == '__main__':
         ###
         h_ngen.Fill(len(refObjs))
         for refObj in refObjs:
-
             all_var_dict['tau_id'].fill(evtid)
             all_var_dict['tau_eventid'].fill(eid)
             all_var_dict['tau_vertex'].fill(len(vertices))
@@ -532,22 +555,21 @@ if __name__ == '__main__':
                 all_var_dict['tau_againstElectronVTightMVA6'].fill(tau.tauID('againstElectronVTightMVA6'))
                 all_var_dict['tau_againstElectronMVA6raw'].fill(tau.tauID('againstElectronMVA6Raw'))
 
-                if "2016v1" in mvaid:
-                    all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBoldDMwLTraw'))
-                    all_var_dict['tau_byLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBoldDMwLT'))
-                    all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBoldDMwLT'))
-                    all_var_dict['tau_byTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBoldDMwLT'))
-                    all_var_dict['tau_byVLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBoldDMwLT'))
-                    all_var_dict['tau_byVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBoldDMwLT'))
-                    all_var_dict['tau_byVVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBoldDMwLT'))
-                if "newDM2016v1" in mvaid:
-                    all_var_dict['tau_byIsolationMVArun2v1PWoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1PWoldDMwLTraw'))
-                    all_var_dict['tau_byLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1PWoldDMwLT'))
-                    all_var_dict['tau_byMediumIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1PWoldDMwLT'))
-                    all_var_dict['tau_byTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1PWoldDMwLT'))
-                    all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
-                    all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
-                    all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBoldDMwLTraw'))
+                all_var_dict['tau_byLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBoldDMwLT'))
+                all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBoldDMwLT'))
+                all_var_dict['tau_byTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBoldDMwLT'))
+                all_var_dict['tau_byVLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBoldDMwLT'))
+                all_var_dict['tau_byVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBoldDMwLT'))
+                all_var_dict['tau_byVVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBoldDMwLT'))
+
+                all_var_dict['tau_byIsolationMVArun2v1PWoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1PWoldDMwLTraw'))
+                all_var_dict['tau_byLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byMediumIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
+                all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
                 if "2017v1" in mvaid:
                     all_var_dict["tau_byIsolationMVArun2017v1DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v1DBoldDMwLTraw2017'))
                     all_var_dict["tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
@@ -566,6 +588,31 @@ if __name__ == '__main__':
                     all_var_dict["tau_byTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byTightIsolationMVArun2017v2DBoldDMwLT2017'))
                     all_var_dict["tau_byVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVTightIsolationMVArun2017v2DBoldDMwLT2017'))
                     all_var_dict["tau_byVVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVVTightIsolationMVArun2017v2DBoldDMwLT2017'))
+                if "2016v1" in mvaid:
+                    all_var_dict["tau_byIsolationMVArun2v1DBoldDMwLTraw2016"].fill(tau.tauID("byIsolationMVArun2v1DBoldDMwLTraw2016"))
+                    all_var_dict["tau_byVLooseIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVLooseIsolationMVArun2v1DBoldDMwLT2016"))
+                    all_var_dict["tau_byLooseIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byLooseIsolationMVArun2v1DBoldDMwLT2016"))
+                    all_var_dict["tau_byMediumIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byMediumIsolationMVArun2v1DBoldDMwLT2016"))
+                    all_var_dict["tau_byTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byTightIsolationMVArun2v1DBoldDMwLT2016"))
+                    all_var_dict["tau_byVTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVTightIsolationMVArun2v1DBoldDMwLT2016"))
+                    all_var_dict["tau_byVVTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVVTightIsolationMVArun2v1DBoldDMwLT2016"))
+                if "newDM2016v1" in mvaid:
+                    all_var_dict["tau_byIsolationMVArun2v1DBnewDMwLTraw2016"].fill(tau.tauID("byIsolationMVArun2v1DBnewDMwLTraw2016"))
+                    all_var_dict["tau_byVLooseIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVLooseIsolationMVArun2v1DBnewDMwLT2016"))
+                    all_var_dict["tau_byLooseIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byLooseIsolationMVArun2v1DBnewDMwLT2016"))
+                    all_var_dict["tau_byMediumIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT2016"))
+                    all_var_dict["tau_byTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byTightIsolationMVArun2v1DBnewDMwLT2016"))
+                    all_var_dict["tau_byVTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVTightIsolationMVArun2v1DBnewDMwLT2016"))
+                    all_var_dict["tau_byVVTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVVTightIsolationMVArun2v1DBnewDMwLT2016"))
+                if "dR0p32017v2" in mvaid:
+                    all_var_dict["tau_byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017"].fill(tau.tauID("byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017"))
+                    all_var_dict["tau_byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
+                    all_var_dict["tau_byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
                 if debug:
                     print 'Release ', RelVal, ': reading Run-2 MVA-based  discriminants'
                     print all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw']
