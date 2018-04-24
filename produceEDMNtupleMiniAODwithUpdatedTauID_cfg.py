@@ -1,6 +1,80 @@
 import FWCore.ParameterSet.Config as cms
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
+import argparse
+from relValTools import *
+
+from FWCore.ParameterSet.VarParsing import VarParsing
+options = VarParsing('python')
+options.register('runtype', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "choose sample type; choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT']")
+options.register('release', 'CMSSW_9_4_0_pre2', VarParsing.multiplicity.singleton, VarParsing.varType.string, 'Release string')
+options.register('globalTag', 'PU25ns_94X_mc2017_realistic_v1-v1', VarParsing.multiplicity.singleton, VarParsing.varType.string, 'Global tag')
+options.register('useRecoJets', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Use RecoJets, 0 - false, 1 - true ')
+options.register('storageSite', 'eos', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Choose between samples store on eos or DAS or in private local folder. choices=['eos','das', 'loc']")
+options.register('localdir', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Local dir where the samples are looked up. \
+    Output is always created under the local dir if this option is activated and the outputfile is not")
+options.register('inputfile', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Single file location for fast checks")
+options.register('outputFileName', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Single file location for fast checks")
+options.register('debug', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Debug option")
+options.register('key', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Key for the input file")
+options.parseArguments()
+
+RelVal = options.release
+globalTag = options.globalTag
+useRecoJets = options.useRecoJets
+storageSite = options.storageSite
+localdir = options.localdir
+debug = options.debug
+runtype = options.runtype
+
+key = options.key
+if len(key) == 0:
+    key = runtype_to_sample[runtype] + "_" + RelVal + "_" + globalTag
+
+if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
+
+
+# Input files
+inputfile = options.inputfile
+if inputfile != "": filelist = [inputfile]
+else:
+    path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
+
+    if   storageSite == "eos":
+        print "debug 1 ===>", path, RelVal, runtype_to_sample[runtype], globalTag
+        filelist = getFilesFromEOS(path)
+    elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
+    elif storageSite == 'loc':
+        print "debug 3 ===>", localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', localdir, runtype_to_sample[runtype], RelVal, globalTag
+        filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
+
+    if len(filelist) == 0:
+        print 'Sample', RelVal, runtype, 'does not exist in', path
+        sys.exit(0)
+
+if storageSite == 'loc': filelist = ['file:' + x for x in filelist]
+
+if key not in test_files.keys():
+    test_files[key] = { 'file' : filelist }
+else:
+    print "!Warning! Such key already in the default list:", key
+
+print "filelist:", filelist
+
+# Output file
+outputFileName = options.outputFileName
+if len(outputFileName) == 0:
+    if localdir == 'loc':
+        outputFileName = localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/' + 'Updated/'
+    outputFileName += 'myoutputFileName.root'
+else:
+    if "/" in outputFileName and outputFileName[0] != "/":
+        print "location of output file has a dir structure but doesn't start with dash"
+        sys.exit(0)
+    if outputFileName[-6:-1] != ".root":
+        outputFileName += '.root'
+        print "output file should have a root format - added automatically:", outputFileName
+#------------------------------------------------------------------------------
 
 process = cms.Process("produceTauIdMVATrainingNtupleMiniAOD")
 #process = cms.Process('TauID', eras.Run2_2017, eras.run2_nanoAOD_94XMiniAODv2)
@@ -18,82 +92,18 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.MessageLogger.cerr.threshold = cms.untracked.string('INFO')
 #process.load('Configuration.StandardSequences.Geometry_cff')
 #process.load('Configuration.Geometry.GeometryIdeal_cff')
+# process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v10', '')# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2017_realistic', '')
-
-# Input source
-key = '2017MCv2_W3Jets'
-test_files = {
-    'RelValQCD_FlatPt_15_3000HS_13_1': {
-        'file' : '/store/relval/CMSSW_9_4_0_pre3/RelValQCD_FlatPt_15_3000HS_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_v4-v1/10000/E89C4CD3-CEBB-E711-BF4F-0025905B856C.root',
-        'type' : 'BackgroundMC',
-        'comment' : "2017 MCv2, with 2016 training, phpt>1"
-    },
-    'RelValQCD_FlatPt_15_3000HS_13_2': {
-        'file' : '/store/relval/CMSSW_9_4_0_pre3/RelValQCD_FlatPt_15_3000HS_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_v4-v1/10000/EE4BC1EA-CEBB-E711-984B-0CC47A78A418.root',
-        'type' : 'BackgroundMC',
-        'comment' : "2017 MCv2, with 2016 training, phpt>1"
-    },
-    'RelValZTT_13_1': {
-        'file' : '/store/relval/CMSSW_9_4_0_pre3/RelValZTT_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_v4-v1/10000/0A99A363-65BB-E711-A1CF-003048FFD72C.root',
-        'type' : 'SignalMC',
-        'comment' : "2017 MCv2, with 2016 training, phpt>1"
-    },
-    'RelValZTT_13_2': {
-        'file' :'/store/relval/CMSSW_9_4_0_pre3/RelValZTT_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_v4-v1/10000/28E2B54E-65BB-E711-ABDD-0025905A606A.root',
-        'type' : 'SignalMC',
-        'comment' : "2017 MCv2, with 2016 training, phpt>1"
-    },
-    '2017MCv1_DY': {
-        'file' :'/store/mc/RunIISummer17MiniAOD/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/92X_upgrade2017_realistic_v10_ext1-v2/10000/00F9D855-E293-E711-B625-02163E014200.root',
-        'type' : 'BackgroundMC',
-        'comment' : "2017 MCv1, with 2016 training, phpt>0.5"
-    },
-    '2017MCv1_ggH': {
-        'file' :'/store/mc/RunIISummer17MiniAOD/SUSYGluGluToHToTauTau_M-2600_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/92X_upgrade2017_realistic_v10-v2/50000/04BF6396-8F9C-E711-9BE4-0CC47A1DF620.root',
-        'type' : 'SignalMC',
-        'comment' : "2017 MCv1, with 2016 training, phpt>0.5"
-    },
-    '2017MCv2_W3Jets': {
-        'file' :'/store/mc/RunIIFall17MiniAOD/W3JetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/94X_mc2017_realistic_v10-v3/80000/02B37840-A50C-E811-B96F-008CFAF70DF6.root',
-        'type' : 'BackgroundMC',
-        'comment' : "2017 MCv2"
-    }
-}
+process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v14', '')# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2017_realistic', '')
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(test_files[key]['file']),
     secondaryFileNames = cms.untracked.vstring()
 )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1005))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents))
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
-
-# process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
-
-#--------------------------------------------------------------------------------
-# define configuration parameter default values
-type = test_files[key]['type']
-#--------------------------------------------------------------------------------
-
-#--------------------------------------------------------------------------------
-# define "hooks" for replacing configuration parameters
-# in case running jobs on the CERN batch system/grid
-#
-#__type = #type#
-#
-isMC = None
-if type == 'SignalMC' or type == 'BackgroundMC': isMC = True
-else: isMC = False
-
-# information for cleaning against leptons
-isSignal = None
-dRClean = 0.5
-if type == 'SignalMC':
-    isSignal = True
-    dRClean = 0.3
-else: isSignal = False
 #--------------------------------------------------------------------------------
 
 from runTauIdMVA import *
@@ -123,7 +133,7 @@ process.out = cms.OutputModule("PoolOutputModule",
     dropMetaData = cms.untracked.string('ALL'),
     eventAutoFlushCompressedSize = cms.untracked.int32(-900),
     fastCloning = cms.untracked.bool(False),
-    fileName = cms.untracked.string('myOutputFile.root'),
+    fileName = cms.untracked.string(outputFileName),
     outputCommands = process.MINIAODSIMEventContent.outputCommands,
     overrideBranchesSplitLevel = cms.untracked.VPSet(cms.untracked.PSet(
         branch = cms.untracked.string('patPackedCandidates_packedPFCandidates__*'),
@@ -182,34 +192,15 @@ process.out.outputCommands.append('keep *_NewTauIDsEmbedded_*_*')
 process.tauIDUpdate_step = cms.Path(process.rerunMvaIsolationSequence * process.NewTauIDsEmbedded)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.out_step = cms.EndPath(process.out)
-# process.tauIDUpdate_step = cms.Path(process.patTauMVAIDsSeq)
-# process.endjob_step = cms.EndPath(process.endOfProcess)
-# process.MINIAODSIMoutput_step = cms.EndPath(process.MINIAODSIMoutput)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.tauIDUpdate_step, process.endjob_step, process.out_step)
-# process.e = cms.EndPath(process.out)
-# customisation of the process.
 
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
 # End adding early deletion
-print "process.schedule:"
-pp.pprint(process.schedule)
 
-
-print "\n\n", "*"*10, "\nprocess.tauIDUpdate_step:"
-pp.pprint(process.tauIDUpdate_step)
-
-print "\n\n", "*"*10, "\nprocess.tauIDUpdate_step first element rerunDiscriminationByIsolationOldDMMVArun2017v2raw:"
-pp.pprint(process.rerunDiscriminationByIsolationOldDMMVArun2017v2raw)
-
-print "\n\n", "*"*10, "\nprocess.endjob_step:"
-pp.pprint(process.endjob_step)
-
-print "\n\n", "*"*10, "\nprocess.out_step:"
-pp.pprint(process.out_step)
 #Customize MessageLogger
 print 'No. of events to process:', process.maxEvents.input.value()
 if process.maxEvents.input.value() > 10:
