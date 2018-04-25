@@ -15,6 +15,7 @@ from collections import namedtuple
 import argparse
 from variables import vardict, hvardict
 from relValTools import *
+from compareTools import *
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
@@ -243,42 +244,43 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, d
     if dryrun: return
     save(c, 'compare_' + runtype + '/histograms/hist_' + name)
 
+# def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle, header='', addon='', option='pt', marker=20, col=1, ptPlotsBinning = None, plotSeparateEff=False):
 
-def makeEffPlotsVars(tree, varx, vary, sel, nbinx, xmin, xmax, nbiny, ymin, ymax, xtitle, ytitle, leglabel=None, header='', addon='', option='pt', marker=20, col=1):
+#     if ptPlotsBinning:
+#         _denomHist_  = TH1F( 'h_effp_' + addon,  'h_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
+#         _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
+#     else: raise ValueError("Wrong binning passed to makeEffPlotsVars with option == %s"%('eta'))
 
-    binning = [20, 200] if args.onebin else [20, 30, 40, 50, 60, 70, 80, 100, 150, 200]
+#     tree.Draw(varx + ' >> ' +  _denomHist_.GetName(), baseSelection)
+#     tree.Draw(varx + ' >> ' + _nominatorHist_.GetName(), baseSelection + ' && ' + numeratorAddSelection)
 
-    if option == 'pt':
-        _hist_ = TH1F('h_effp_' + addon, 'h_effp' + addon,
-                      len(binning)-1, array('d', binning))
-        _ahist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon,
-                       len(binning)-1, array('d', binning))
-    elif option == 'eta':
-        _hist_ = TH1F('h_effp_' + addon, 'h_effp' + addon, nbinx, xmin, xmax)
-        _ahist_ = TH1F('ah_effp_' + addon, 'ah_effp' +
-                       addon, nbinx, xmin, xmax)
+#     g_efficiency = TGraphAsymmErrors()
+#     g_efficiency.Divide(_nominatorHist_, _denomHist_, "cl=0.683 b(1,1) mode")
+#     g_efficiency.GetXaxis().SetTitle(xtitle)
+#     g_efficiency.GetYaxis().SetTitle('efficiency')
+#     g_efficiency.GetYaxis().SetNdivisions(507)
+#     g_efficiency.SetLineWidth(3)
+#     g_efficiency.SetName(header)
+#     g_efficiency.SetMinimum(0.)
+#     g_efficiency.GetYaxis().SetTitleOffset(1.3)
+#     g_efficiency.SetMarkerStyle(marker)
+#     g_efficiency.SetMarkerSize(1)
+#     g_efficiency.SetMarkerColor(col)
+#     g_efficiency.SetLineColor(col)
+#     g_efficiency.Draw('ap')
 
-    tree.Draw(varx + ' >> ' + _hist_.GetName(), sel)
-    tree.Draw(varx + ' >> ' + _ahist_.GetName(), sel + ' && ' + vary)
+#     if plotSeparateEff:
+#         canvas = TCanvas()
+#         leg = TLegend(0.2, 0.7, 0.5, 0.9)
+#         configureLegend(leg, 1)
+#         legname = g_efficiency.GetName()
+#         hist.GetPoint(0, x, y)
+#         leg.AddEntry(hist, legname, 'lep')
+#         leg.Draw()
+#         g_efficiency.Draw()
+#         save(canvas, "plots/makeEffPlotsVars/" + addon)
 
-    g_efficiency = TGraphAsymmErrors()
-    g_efficiency.Divide(_ahist_, _hist_, "cl=0.683 b(1,1) mode")
-    g_efficiency.GetXaxis().SetTitle(xtitle)
-    g_efficiency.GetYaxis().SetTitle('efficiency')
-    g_efficiency.GetYaxis().SetNdivisions(507)
-    g_efficiency.SetLineWidth(3)
-    g_efficiency.SetName(header)
-    g_efficiency.SetMinimum(0.)
-    g_efficiency.GetYaxis().SetTitleOffset(1.3)
-    g_efficiency.SetMarkerStyle(marker)
-    g_efficiency.SetMarkerSize(1)
-    g_efficiency.SetMarkerColor(col)
-    g_efficiency.SetLineColor(col)
-    g_efficiency.Draw('ap')
-
-#    save(c, 'plots/' + addon)
-    return g_efficiency
-
+#     return g_efficiency
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -298,36 +300,20 @@ if __name__ == '__main__':
     globaltags = args.globalTag.split(',')
     print 'Releases', releases, '\nGlobal tags', globaltags
 
-    tlabel = 'Z #rightarrow #tau#tau'
-    # tlabel = 'gg #rightarrow H(125) #rightarrow #tau#tau'
-    xlabel = 'gen. tau p_{T}^{vis} (GeV)'
-    xlabel_eta = 'gen. tau #eta^{vis}'
-
-    if runtype == 'QCD':
-        #tlabel = 'QCD'
-        tlabel = 'QCD, flat #hat{p}_{T} 15-3000GeV'
-        xlabel = 'jet p_{T} (GeV)'
-        xlabel_eta = 'jet #eta'
-    elif runtype == 'ZEE':
-        tlabel = 'Z #rightarrow ee'
-        xlabel = 'electron p_{T} (GeV)'
-        xlabel_eta = 'electron #eta'
-    elif runtype == 'ZMM':
-        tlabel = 'Z #rightarrow #mu#mu'
-        xlabel = 'muon p_{T} (GeV)'
-        xlabel_eta = 'muon #eta'
-    elif runtype == 'TTbar':
-        tlabel = 'TTbar'
-        xlabel = 'jet p_{T} (GeV)'
-        xlabel_eta = 'jet #eta'
-    elif runtype == 'TTbarTau':
-        tlabel = 'TTbar #rightarrow #tau+X'
-        xlabel = 'gen. tau p_{T}^{vis} (GeV)'
-        xlabel_eta = 'gen. tau #eta^{vis}'
+    RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
+    options_dict = {
+        'ZTT': RuntypeOptions(tlabel = 'Z #rightarrow #tau#tau', xlabel = 'gen. tau p_{T}^{vis} (GeV)', xlabel_eta = 'gen. tau #eta^{vis}'),
+        'ZEE': RuntypeOptions(tlabel = 'Z #rightarrow ee', xlabel = 'electron p_{T} (GeV)', xlabel_eta = 'electron #eta'),
+        'ZMM': RuntypeOptions(tlabel = 'Z #rightarrow #mu#mu', xlabel = 'muon p_{T} (GeV)', xlabel_eta = 'muon #eta'),
+        'QCD': RuntypeOptions(tlabel = 'QCD, flat #hat{p}_{T} 15-3000GeV', xlabel = 'jet p_{T} (GeV)', xlabel_eta = 'jet #eta'),
+        'TTbar': RuntypeOptions(tlabel = 'TTbar', xlabel = 'jet p_{T} (GeV)', xlabel_eta = 'jet #eta'),
+        'TTbarTau': RuntypeOptions( tlabel = 'TTbar #rightarrow #tau+X', xlabel = 'gen. tau p_{T}^{vis} (GeV)', xlabel_eta = 'gen. tau #eta^{vis}')
+    }
 
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
     #loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
     loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
+    loose_id_17v2 = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017 > 0.5'
 
     styles = [
         {'col': 8, 'marker': 25, 'width': 2},
@@ -358,28 +344,61 @@ if __name__ == '__main__':
                 tree = rdict['tree']
                 num_sel = reco_cut
                 den_sel = '1'
+                den_sel_17v2 = '1'
 
                 if hname.find('against') != -1:
                     #num_sel = '1'
                     num_sel = reco_cut
                     den_sel = reco_cut + ' && ' + loose_id
+                    den_sel_17v2 = reco_cut + ' && ' + loose_id_17v2
 
-                hists.append(makeEffPlotsVars(tree, 'tau_genpt', num_sel + '&&' + hdict['var'], den_sel + '&& abs(tau_eta) < 2.3', 30, 0, 300, hdict['nbin'], hdict['min'], hdict['max'], xlabel, hdict['title'], '', rel, rel, 'pt', rdict['marker'], rdict['col']))
-                histseta.append(makeEffPlotsVars(tree, 'tau_geneta', num_sel + '&&' + hdict['var'], den_sel + '&& tau_pt>20', 12, -2.4, 2.4, hdict['nbin'], hdict['min'], hdict['max'], xlabel_eta, hdict['title'], '', rel, rel, 'eta', rdict['marker'], rdict['col']))
+                for mvaIDname, sel in {"loose_id": den_sel, "loose_id_17v2": den_sel_17v2}.items():
+                    hists.append(makeEffPlotsVars(tree=tree,
+                        varx='tau_genpt',
+                        numeratorAddSelection=num_sel + '&&' + hdict['var'],
+                        baseSelection=sel + '&& abs(tau_eta) < 2.3',
+                        xtitle=options_dict[runtype].xlabel,
+                        header=rel + mvaIDname, addon=rel + mvaIDname,
+                        option='pt',
+                        marker=rdict['marker'],
+                        col=rdict['col'],
+                        ptPlotsBinning=ptPlotsBinning)
+                    )
+                    histseta.append(makeEffPlotsVars(tree=tree,
+                        varx='tau_geneta',
+                        numeratorAddSelection=num_sel + '&&' + hdict['var'],
+                        baseSelection=sel + '&& tau_pt>20',
+                        xtitle=options_dict[runtype].xlabel_eta,
+                        header=rel + mvaIDname, addon=rel + mvaIDname,
+                        option='eta',
+                        marker=rdict['marker'],
+                        col=rdict['col'],
+                        ptPlotsBinning=etaPlotsBinning)
+                    )
 
+            overlay(hists=hists, ytitle=hname,
+                header=hname,
+                addon=hdict['title'],
+                runtype=runtype,
+                tlabel=options_dict[runtype].tlabel,
+                xlabel=options_dict[runtype].xlabel,
+                dryrun=dryRun)
 
+            overlay(hists=histseta, ytitle=hname,
+                header=hname + '_eta',
+                addon=hdict['title'] + '_eta',
+                runtype=runtype,
+                tlabel=options_dict[runtype].tlabel,
+                xlabel=options_dict[runtype].xlabel,
+                dryrun=dryRun)
 
-            overlay(hists, hname, hname, hdict['title'])
-            overlay(histseta, hname, hname+'_eta', hdict['title']+'_eta')
-
-    if part==1: exit()
-    i = 0
-    for hname, hdict in hvardict.items():
-	i+=1
-        if part==2 and i>len(hvardict.items())/2:
-            exit()
-        elif part==3 and i<=len(hvardict.items())/2:
-            continue
+    if part == 1: exit()
+    print "Second part of plots"
+    for index, (hname, hdict) in enumerate(hvardict.iteritems()):
+        if   part == 2 and index > len(hvardict.items()) / 2: exit()
+        elif part == 3 and index <= len(hvardict.items()) / 2: continue
+        elif part == 3 and index - 1== len(hvardict.items()) / 2: print "Third part of plots"
+        if runtype not in ['ZTT', 'TTbarTau'] and hname.find('pt_resolution') != -1: continue
 
         hists = []
         for rel, rdict in sampledict.items():
