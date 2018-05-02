@@ -59,10 +59,8 @@ def getFilesFromEOS(path, cmseospath=True):
 
 def getFilesFromDAS(release, runtype, globalTag):
     '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
-    print "Getting files from DAS. May take a while...."
-
     query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
-
+    print "Getting files from DAS. May take a while.... query:", query
     import subprocess
     result = subprocess.check_output("dasgoclient --query='" + "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, ) + "'", shell=True)
     files =  ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]

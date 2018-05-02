@@ -131,9 +131,6 @@ if __name__ == '__main__':
     print len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents
     events = Events(filelist)
 
-    genJetssuffix = ""
-    if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'): genJetssuffix = "_genJets"
-
     ######## Output file ########
     outputFileName = args.outputFileName
     if len(outputFileName) == 0:
@@ -141,6 +138,10 @@ if __name__ == '__main__':
             outputFileName = localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/' + 'TauValTree/'
             if not os.path.isdir(outputFileName):
                 result = subprocess.check_output("mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
+
+        genJetssuffix = ""
+        if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'): genJetssuffix = "_genJets"
+
         outputFileName += 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + genJetssuffix + '.root'
     else:
         if "/" in outputFileName and outputFileName[0] != "/":
