@@ -42,9 +42,26 @@ vardict = {
     'byLooseIsolationMVArun2v1DBoldDMwLT':  {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT'},
     'byMediumIsolationMVArun2v1DBoldDMwLT': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT'},
     'byTightIsolationMVArun2v1DBoldDMwLT':  {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT'},
+    #
+    'byLooseIsolationMVArun2v1PWoldDMwLT':  {'var': 'tau_byLooseIsolationMVArun2v1PWoldDMwLT  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1PWoldDMwLT'},
+    'byMediumIsolationMVArun2v1PWoldDMwLT': {'var': 'tau_byMediumIsolationMVArun2v1PWoldDMwLT > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1PWoldDMwLT'},
+    'byTightIsolationMVArun2v1PWoldDMwLT':  {'var': 'tau_byTightIsolationMVArun2v1PWoldDMwLT  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1PWoldDMwLT'},
+    ## 2017v1
+    'byLooseIsolationMVArun2017v1DBoldDMwLT2017':  {'var': 'tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2017v1DBoldDMwLT2017'},
+    'byMediumIsolationMVArun2017v1DBoldDMwLT2017': {'var': 'tau_byMediumIsolationMVArun2017v1DBoldDMwLT2017 > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2017v1DBoldDMwLT2017'},
+    'byTightIsolationMVArun2017v1DBoldDMwLT2017':  {'var': 'tau_byTightIsolationMVArun2017v1DBoldDMwLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2017v1DBoldDMwLT2017'},
+    # 2017v2
     'byLooseIsolationMVArun2017v2DBoldDMwLT2017':  {'var': 'tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2017v2DBoldDMwLT2017'},
     'byMediumIsolationMVArun2017v2DBoldDMwLT2017': {'var': 'tau_byMediumIsolationMVArun2017v2DBoldDMwLT2017 > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2017v2DBoldDMwLT2017'},
     'byTightIsolationMVArun2017v2DBoldDMwLT2017':  {'var': 'tau_byTightIsolationMVArun2017v2DBoldDMwLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2017v2DBoldDMwLT2017'},
+    # 2016v1
+    "byLooseIsolationMVArun2v1DBoldDMwLT2016": {'var': 'tau_byLooseIsolationMVArun2v1DBoldDMwLT2016  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBoldDMwLT2016'},
+    'byMediumIsolationMVArun2v1DBoldDMwLT2016': {'var': 'tau_byMediumIsolationMVArun2v1DBoldDMwLT2016 > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBoldDMwLT2016'},
+    'byTightIsolationMVArun2v1DBoldDMwLT2016':  {'var': 'tau_byTightIsolationMVArun2v1DBoldDMwLT2016  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBoldDMwLT2016'},
+    # 2017v2 dR=0.3
+    "byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017": {'var': 'tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017'},
+    'byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017': {'var': 'tau_byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017 > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017'},
+    'byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017':  {'var': 'tau_byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017  > 0.5 && tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017'},
 
     # newDM
     'byLooseCombinedIsolationDeltaBetaCorr3Hits_newDM': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
@@ -61,6 +78,10 @@ vardict = {
     'byLooseNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 6 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 6 GeV'},
     'byMediumNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 5 GeV'},
     'byTightNeutralIsolationUnCorr_newDM': {'var': 'tau_neutralIsoPtSum < 4 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'neutral-iso < 4 GeV'},
+    # 2016 new
+    "byLooseIsolationMVArun2v1DBnewDMwLT2016": {'var': 'tau_byLooseIsolationMVArun2v1DBnewDMwLT2016  > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseIsolationMVArun2v1DBnewDMwLT2016'},
+    'byMediumIsolationMVArun2v1DBnewDMwLT2016': {'var': 'tau_byMediumIsolationMVArun2v1DBnewDMwLT2016 > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byMediumIsolationMVArun2v1DBnewDMwLT2016'},
+    'byTightIsolationMVArun2v1DBnewDMwLT2016':  {'var': 'tau_byTightIsolationMVArun2v1DBnewDMwLT2016  > 0.5 && tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byTightIsolationMVArun2v1DBnewDMwLT2016'},
 
     # modOldDM
     'byLooseCombinedIsolationDeltaBetaCorr3Hits_modOldDM': {'var': 'tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5 && tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'byLooseCombinedIsolationDeltaBetaCorr3Hits'},
@@ -212,6 +233,12 @@ hvardict = {
 
     'tau_MVAIsoRaw': {'var': 'tau_byIsolationMVArun2v1DBoldDMwLTraw', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
     'tau_MVAIsoRaw17v2': {'var': 'tau_byIsolationMVArun2017v2DBoldDMwLTraw2017', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
+    'tau_MVAIsoRawPW': {'var': 'tau_byIsolationMVArun2v1PWoldDMwLTraw', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
+    'tau_MVAIsoRawdR03': {'var': 'tau_byIsolationMVArun2v1DBdR03oldDMwLTraw', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
+    'tau_MVAIsoRaw17v1': {'var': 'tau_byIsolationMVArun2017v1DBoldDMwLTraw2017', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
+    'tau_MVAIsoRaw16': {'var': 'tau_byIsolationMVArun2v1DBoldDMwLTraw2016', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
+    'tau_MVAIsoRaw16new': {'var': 'tau_byIsolationMVArun2v1DBnewDMwLTraw2016', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (newDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingNewDMs > 0.5'},
+    'tau_MVAIsoRaw17v2dR0p3': {'var': 'tau_byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
     # as before but w/o Iso in the name to not use log scale (dirty)
     'tau_MVA':     {'var': 'tau_byIsolationMVArun2v1DBoldDMwLTraw', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
     'tau_MVA17v2': {'var': 'tau_byIsolationMVArun2017v2DBoldDMwLTraw2017', 'nbin': 40, 'min': -1., 'max': 1, 'title': 'Raw IsoMVA (oldDMs)', 'sel': 'tau_genpt > 0 && tau_pt > 0 && tau_decayModeFindingOldDMs > 0.5'},
