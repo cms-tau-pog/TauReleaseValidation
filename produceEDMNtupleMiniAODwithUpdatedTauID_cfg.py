@@ -1,9 +1,8 @@
 import FWCore.ParameterSet.Config as cms
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-import argparse
+
 from relValTools import *
 
+######## Parsing options ########
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('python')
 options.register('runtype', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "choose sample type; choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT']")
@@ -34,19 +33,15 @@ if len(key) == 0:
 if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
 
 
-# Input files
+######## Input files ########
 inputfile = options.inputfile
 if inputfile != "": filelist = [inputfile]
 else:
     path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
 
-    if   storageSite == "eos":
-        print "debug 1 ===>", path, RelVal, runtype_to_sample[runtype], globalTag
-        filelist = getFilesFromEOS(path)
+    if   storageSite == "eos": filelist = getFilesFromEOS(path)
     elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
-    elif storageSite == 'loc':
-        print "debug 3 ===>", localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', localdir, runtype_to_sample[runtype], RelVal, globalTag
-        filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
+    elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
 
     if len(filelist) == 0:
         print 'Sample', RelVal, runtype, 'does not exist in', path
@@ -61,25 +56,33 @@ else:
 
 print "filelist:", filelist
 
-# Output file
+######## Output file ########
 outputFileName = options.outputFileName
 if len(outputFileName) == 0:
-    if localdir == 'loc':
+    if storageSite == 'loc':
         outputFileName = localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/' + 'Updated/'
-    outputFileName += 'myoutputFileName.root'
+        
+        if not os.path.isdir(outputFileName):
+
+            result = subprocess.check_output("mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
+
+    outputFileName += 'output.root'
 else:
     if "/" in outputFileName and outputFileName[0] != "/":
         print "location of output file has a dir structure but doesn't start with dash"
         sys.exit(0)
-    if outputFileName[-6:-1] != ".root":
+    if outputFileName[-5:] != ".root":
         outputFileName += '.root'
         print "output file should have a root format - added automatically:", outputFileName
-#------------------------------------------------------------------------------
+
+print "outputFileName:", outputFileName
+
+#---------------------------------- Parameter Set --------------------------------------------
 
 process = cms.Process("produceTauIdMVATrainingNtupleMiniAOD")
 #process = cms.Process('TauID', eras.Run2_2017, eras.run2_nanoAOD_94XMiniAODv2)
 
-# import of standard configurations
+######## Import of standard configurations ########
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
@@ -108,7 +111,7 @@ process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 
 from runTauIdMVA import *
 na = TauIDEmbedder(process, cms,
-    debug=True,
+    debug=False,
     toKeep = ["2017v1", "2017v2", "newDM2017v2", "dR0p32017v2", "2016v1", "newDM2016v1"]
 )
 na.runTauID()
