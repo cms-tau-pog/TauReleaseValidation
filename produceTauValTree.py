@@ -90,7 +90,7 @@ def GetNonTauJets(jets1, genLeptons, runtype='ZTT', debug=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser)
+    addArguments(parser, compare=False)
     args = parser.parse_args()
         
     maxEvents = args.maxEvents
@@ -128,21 +128,33 @@ if __name__ == '__main__':
             print 'Sample', RelVal, runtype, 'does not exist in', path
             sys.exit(0)
 
-    print "filelist:", filelist
+    print len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents
     events = Events(filelist)
-    print len(filelist), 'files will be analyzed'
-    if maxEvents > 0: print maxEvents, 'events will be analyzed'
-    else: print 'All events will be analyzed (maxEvents = %i)' % maxEvents
 
-    outputname = 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + '.root'
-    if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'):
-        outputname = 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + 'genJets.root'
+    genJetssuffix = ""
+    if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'): genJetssuffix = "_genJets"
 
-    file = ROOT.TFile(outputname, 'recreate')
+    ######## Output file ########
+    outputFileName = args.outputFileName
+    if len(outputFileName) == 0:
+        if storageSite == 'loc':
+            outputFileName = localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/' + 'TauValTree/'
+            if not os.path.isdir(outputFileName):
+                result = subprocess.check_output("mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
+        outputFileName += 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + genJetssuffix + '.root'
+    else:
+        if "/" in outputFileName and outputFileName[0] != "/":
+            print "location of output file has a dir structure but doesn't start with dash"
+            sys.exit(0)
+        if outputFileName[-5:] != ".root":
+            outputFileName += '.root'
+            print "output file should have a root format - added automatically:", outputFileName
 
+    print "outputFileName:", outputFileName
+
+    file = ROOT.TFile(outputFileName, 'recreate')
 
     h_ngen = ROOT.TH1F("h_ngen", "h_ngen", 10, 0, 10)
-
     h_pfch_pt = ROOT.TH1F("h_pfch_pt", "pfch;p_{T} (GeV)", 500, 0, 500)
     h_pfch_eta = ROOT.TH1F("h_pfch_eta", "pfch;#eta", 50, -2.5, 2.5)
     h_pfch_phi = ROOT.TH1F("h_pfch_phi", "pfch;#phi", 64, -3.2, 3.2)
@@ -211,6 +223,13 @@ if __name__ == '__main__':
         Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
         Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
         Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int),
+        Var('tau_byIsolationMVArun2v1DBdR03oldDMwLTraw', float),
+        Var('tau_byLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
+        Var('tau_byMediumIsolationMVArun2v1DBdR03oldDMwLT', int),
+        Var('tau_byTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+        Var('tau_byVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
+        Var('tau_byVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+        Var('tau_byVVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
         Var('tau_chargedIsoPtSum', float),
         Var('tau_neutralIsoPtSum', float),
         Var('tau_puCorrPtSum', float),
@@ -364,10 +383,10 @@ if __name__ == '__main__':
             and (( (abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) \
                 or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
 
-        print "Jets processing:"
+        if debug: print "Jets processing:"
         jets = GetNonTauJets(jets1, genLeptons, runtype, debug)
 
-        print "GenJets processing:"
+        if debug: print "GenJets processing:"
         genJets = GetNonTauJets(genJets1, genLeptons, runtype, debug)
 
         refObjs = []
@@ -438,7 +457,7 @@ if __name__ == '__main__':
                 # Fill reco-tau variables if it exists...
                 NMatchedTaus += 1
 
-                print tau
+                if debug: print tau
 
                 all_var_dict['tau_dm'].fill(tau.decayMode())
                 all_var_dict['tau_dm_rough'].fill(returnRough(tau.decayMode()))
@@ -481,8 +500,7 @@ if __name__ == '__main__':
                     if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5: continue
 
                     if cand.hasTrackDetails(): tt = cand.pseudoTrack()
-                    else:
-                        print "no hasTrackDetails()"
+                    elif debug: print "no hasTrackDetails()"
                     # if cand.pt()<=0.5 or tt.normalizedChi2()>=100. or
                     # tt.dxy(vertices[tau_vertex_idxpf].position())>=0.1 or
                     # cand.numberOfHits()<3:
@@ -570,6 +588,15 @@ if __name__ == '__main__':
                 all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
                 all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
                 all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
+
+                all_var_dict['tau_byIsolationMVArun2v1DBdR03oldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBdR03oldDMwLTraw'))
+                all_var_dict['tau_byLooseIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBdR03oldDMwLT'))
+                all_var_dict['tau_byMediumIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBdR03oldDMwLT'))
+                all_var_dict['tau_byTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBdR03oldDMwLT'))
+                all_var_dict['tau_byVLooseIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBdR03oldDMwLT'))
+                all_var_dict['tau_byVTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBdR03oldDMwLT'))
+                all_var_dict['tau_byVVTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBdR03oldDMwLT'))
+
                 if "2017v1" in mvaid:
                     all_var_dict["tau_byIsolationMVArun2017v1DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v1DBoldDMwLTraw2017'))
                     all_var_dict["tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
