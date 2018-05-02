@@ -1,31 +1,45 @@
 import eostools
 import re
+import os
+import subprocess
+
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-def addArguments(parser, compare=False):
+def addArguments(parser, compare=False, comparePerRelease=False):
     # for produceTauValTree.py
     parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
-    parser.add_argument('-g', '--globalTag', default='PU25ns_94X_mc2017_realistic_v1-v1',  help='Global tag [Default: %(default)s]')
     parser.add_argument('-n', '--maxEvents', default=-1, type=int,  help='Number of events that will be analyzed (-1 = all events) [Default: %(default)s]')
     parser.add_argument('-u', '--useRecoJets', default=False, action="store_true",  help='Use RecoJets [Default: %(default)s]')
     parser.add_argument('-s', '--storageSite', default='eos', choices=['eos','das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
     parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")
-    parser.add_argument('-i', '--inputfile', default='', help="Single file location for fast checks [Default: %(default)s]")
     parser.add_argument('-d', '--debug', default=False, help="Debug option [Default: %(default)s]", action="store_true")
     parser.add_argument('-m', '--mvaid', default=["2017v1", "2016v1", "newDM2016v1"], nargs='*',
         help="Select final state(s) for measurement. This agument can be set multiple times. Possible options: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
     parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. Possible: NewTauIDsEmbedded; [Default: %(default)s].")
     parser.add_argument('--dryRun', default=False, action="store_true",  help='Dry run - no plots [Default: %(default)s]')
+    parser.add_argument('-o', '--outputFileName', default='', help="Output file name [Default: %(default)s]")
 
-    if compare:
-        parser.add_argument('-r', '--releases', default='CMSSW_9_4_0_pre1,CMSSW_9_4_0_pre2', help='comma separated list of releases')
+    if compare or comparePerRelease:
         parser.add_argument('-p', '--part', default=0, type=int,  help='Make WP plots(1), first half of histogram plots(2), \
             second half of histogram plots(3), or everything at once(0) \
             (This part needs to be split up to avoid a crash that happens for some reason)')
         parser.add_argument('-b', '--onebin', default=False, action="store_true",  help='Plot inclusive efficiencies by only using one bin')
+
+    if compare:
+        parser.add_argument('-r', '--releases', default=["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"], nargs='*', help='List of releases')
+        parser.add_argument('-g', '--globalTags', default=['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1'], nargs='*',  help='List of global tags [Default: %(default)s]')
+        parser.add_argument('-i', '--inputfiles', default=[''], nargs='*', help="List of file locations [Default: %(default)s]")
     else:
         parser.add_argument('-r', '--release', default='CMSSW_9_4_0_pre2',  help='Release string [Default: %(default)s]')
+        parser.add_argument('-g', '--globalTag', default='PU25ns_94X_mc2017_realistic_v1-v1',  help='Global tag [Default: %(default)s]')
+        parser.add_argument('-i', '--inputfile', default='', help="Single file location for fast checks [Default: %(default)s]")
+
+    if comparePerRelease:
+        parser.add_argument('-v', '--variables', default=["byLooseIsolationMVArun2017v2DBoldDMwLT2017", "byLooseIsolationMVArun2v1DBoldDMwLT"], nargs='*', help='Variables to place on a single plot per release+GT')
+        parser.add_argument('-c', '--colors', default=[1, 4], nargs='*', help='Colors of ariables to place on a single plot per release+GT')
+        parser.add_argument('--varyLooseId',  default=False, action="store_true",  help='If the loose Id should be varied')
+        parser.add_argument('--setLooseId',  default='tau_byLooseIsolationMVArun2v1DBoldDMwLT', help='LooseId to be considered')
 
 def getFilesFromEOS(path, cmseospath=True):
     '''Give path in form /store/relval/CMSSW_9_4_0_pre2/...'''
