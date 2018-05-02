@@ -2,3 +2,5 @@ __init__.py
 *.root
 *pyc
 ._*
+*.png
+*.pdf
