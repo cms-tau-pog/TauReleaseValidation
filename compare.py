@@ -30,10 +30,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
     part = args.part
     dryRun = args.dryRun
+    debug = args.debug
+    inputfiles = args.inputfiles
 
     runtype = args.runtype
     releases = args.releases
     globaltags = args.globalTags
+    if debug: print 'Producing plots for runtype', runtype, '\nReleases:', releases, '\nGlobal tags:', globaltags
+    sampledict = FillSampledic(globaltags, releases, runtype, inputfiles, debug)
 
     RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
     options_dict = {
