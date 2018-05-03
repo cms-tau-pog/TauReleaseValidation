@@ -31,35 +31,45 @@ if __name__ == '__main__':
     if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
 
     mvaid = args.mvaid
-    mvaidstr = ""
+    mvaidstr = " --mvaid "
     for id in mvaid:
         mvaidstr += id + " "
 
     scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]
 
+    dd = ""
+    if dryRun: dd = " --dryRun "
+    if debug: dd += " --debug"
+
+
 
     for i, relval in enumerate(RelVals):
         print "===================="
-        result = subprocess.check_output('python ' + scriptPath +
-            'produceTauValTree.py -r ' + relval +
-            ' -g ' + globalTags[i] +
-            (len(inputfiles)>0) * ' --inputfile ' + inputfiles[i] +
-            ' --runtype ' + runtype +
-            ' -n ' + str(maxEvents) +
-            useRecoJets * ' -u ' +
-            ' -s ' + storageSite +
-            " -l " + localdir +
-            " --tauCollection " + tauCollection +
-            (len(outputFileName) > 0) * (" --outputFileName " + outputFileName) +
-            (len(mvaid) > 0) * (" --mvaid " + mvaidstr) +
-            dryRun * ' --dryRun ' +
-            debug * " --debug", shell=True)
+        inputfile = ""
+        if len(inputfiles) > 0:
+            inputfile = ' --inputfile ' + inputfiles[i]
+        subcommand = 'python ' + scriptPath + 'produceTauValTree.py -r ' + relval + ' -g ' + globalTags[i] + inputfile  + ' --runtype ' + runtype + ' -n ' + str(maxEvents) + useRecoJets * ' -u ' + ' -s ' + storageSite + " -l " + localdir + " --tauCollection " + tauCollection + mvaidstr + dd
+        # + (len(outputFileName) > 0) * (" --outputFileName " + outputFileName)
+
+        print subcommand
+        result = subprocess.check_output(subcommand, shell=True)
         pp.pprint(result)
 
+    if onebin: onebin = ' -b'
+    else: onebin = ''
+
+    globalTagsstr = ""
+    for i in globalTags:
+        globalTagsstr += str(i) + " "
+
+    releases = ""
+    for i in RelVals:
+        releases += str(i) + " "
+
     commands = []
-    commands.append('python ' + scriptPath + 'compare.py -r ' + args.releases + ' -g ' + args.globalTag + ' --runtype ' + runtype + onebin * ' -b'  + ' -p 1' + debug * " --debug")
-    commands.append('python ' + scriptPath + 'compare.py -r ' + args.releases + ' -g ' + args.globalTag + ' --runtype ' + runtype + onebin * ' -b'  + ' -p 2' + debug * " --debug")
-    commands.append('python ' + scriptPath + 'compare.py -r ' + args.releases + ' -g ' + args.globalTag + ' --runtype ' + runtype + onebin * ' -b'  + ' -p 3' + debug * " --debug")
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 1' + dd)
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 2' + dd)
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 3' + dd)
 
     for command in commands:
         print "===================="
