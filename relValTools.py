@@ -77,6 +77,30 @@ runtype_to_sample = {
     'ZpTT':'RelValZpTT_1500_13'
 }
 
+def get_cmssw_version(debug = False):
+        """returns 'CMSSW_X_Y_Z'"""
+        if debug: print "get_cmssw_version:", os.environ["CMSSW_RELEASE_BASE"].split('/')[-1]
+        return os.environ["CMSSW_RELEASE_BASE"].split('/')[-1]
+
+def get_cmssw_version_number(debug = False):
+        """returns 'X_Y_Z' (without 'CMSSW_')"""
+        if debug: print "get_cmssw_version_number:", map(int, get_cmssw_version().split("CMSSW_")[1].split("_")[0:3])
+        return map(int, get_cmssw_version().split("CMSSW_")[1].split("_")[0:3])
+
+
+def versionToInt(release=9, subversion=4, patch=0, debug = False):
+        if debug: print "versionToInt:", release * 10000 + subversion * 100 + patch
+        return release * 10000 + subversion * 100 + patch
+
+
+def is_above_cmssw_version(release=9, subversion=4, patch=0, debug = False):
+        split_cmssw_version = get_cmssw_version_number()
+        if versionToInt(release, subversion, patch) > versionToInt(split_cmssw_version[0], split_cmssw_version[1], split_cmssw_version[2]):
+            if debug: print "is_above_cmssw_version:", False
+            return False
+        else:
+            if debug: print "is_above_cmssw_version:", True
+            return True
 
 # Input source
 #key = '2017MCv2_W3Jets'

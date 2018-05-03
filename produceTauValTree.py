@@ -17,7 +17,7 @@ from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 
 import eostools
-from relValTools import *
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, get_cmssw_version, get_cmssw_version_number, versionToInt, is_above_cmssw_version, runtype_to_sample
 
 ROOT.gROOT.SetBatch(True)
 
@@ -499,8 +499,10 @@ if __name__ == '__main__':
                     if not abs(cand.charge()) > 0: continue
                     if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5: continue
 
-                    if cand.hasTrackDetails(): tt = cand.pseudoTrack()
-                    elif debug: print "no hasTrackDetails()"
+                    if is_above_cmssw_version(9, 2, 0, debug):
+                        if cand.hasTrackDetails(): tt = cand.pseudoTrack()
+                        elif debug: print "no hasTrackDetails()"
+                    else: tt = cand.pseudoTrack()
                     # if cand.pt()<=0.5 or tt.normalizedChi2()>=100. or
                     # tt.dxy(vertices[tau_vertex_idxpf].position())>=0.1 or
                     # cand.numberOfHits()<3:
