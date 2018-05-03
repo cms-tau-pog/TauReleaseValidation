@@ -12,7 +12,6 @@ import argparse
 import numpy as num
 import copy
 
-from das_client import get_data, x509
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
