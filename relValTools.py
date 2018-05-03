@@ -29,7 +29,7 @@ def addArguments(parser, compare=False, comparePerRelease=False):
     if compare:
         parser.add_argument('-r', '--releases', default=["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"], nargs='*', help='List of releases')
         parser.add_argument('-g', '--globalTags', default=['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1'], nargs='*',  help='List of global tags [Default: %(default)s]')
-        parser.add_argument('-i', '--inputfiles', default=[''], nargs='*', help="List of file locations [Default: %(default)s]")
+        parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
     else:
         parser.add_argument('-r', '--release', default='CMSSW_9_4_0_pre2',  help='Release string [Default: %(default)s]')
         parser.add_argument('-g', '--globalTag', default='PU25ns_94X_mc2017_realistic_v1-v1',  help='Global tag [Default: %(default)s]')

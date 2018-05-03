@@ -308,7 +308,7 @@ def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle=''
     return g_efficiency
 
 
-def fillSampledic(globaltags, releases, runtype, inputfiles='', debug=False):
+def fillSampledic(globaltags, releases, runtype, inputfiles=[], debug=False):
     if debug: print "Collecting samples"
 
     sampledict = {}
