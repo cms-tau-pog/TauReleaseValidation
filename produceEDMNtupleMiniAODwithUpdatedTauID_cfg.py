@@ -211,4 +211,3 @@ if process.maxEvents.input.value() > 10:
      process.MessageLogger.cerr.FwkReport.reportEvery = process.maxEvents.input.value()//10
 if process.maxEvents.input.value() > 10000 or process.maxEvents.input.value() < 0:
      process.MessageLogger.cerr.FwkReport.reportEvery = 1000
-
