@@ -14,8 +14,8 @@ def addArguments(parser, compare=False, comparePerRelease=False):
     parser.add_argument('-s', '--storageSite', default='eos', choices=['eos','das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
     parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")
     parser.add_argument('-d', '--debug', default=False, help="Debug option [Default: %(default)s]", action="store_true")
-    parser.add_argument('-m', '--mvaid', default=["2017v1", "2016v1", "newDM2016v1"], nargs='*',
-        help="Select final state(s) for measurement. This agument can be set multiple times. Possible options: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
+    parser.add_argument('-m', '--mvaid', default=[], nargs='*',
+        help="Select mvaids that should be obtained via rerunning TAUId sequence: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
     parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. Possible: NewTauIDsEmbedded; [Default: %(default)s].")
     parser.add_argument('--dryRun', default=False, action="store_true",  help='Dry run - no plots [Default: %(default)s]')
     parser.add_argument('-o', '--outputFileName', default='', help="Output file name [Default: %(default)s]")
