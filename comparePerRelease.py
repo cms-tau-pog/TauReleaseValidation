@@ -15,7 +15,7 @@ import argparse
 from variables import vardict, hvardict
 
 from relValTools import addArguments
-from compareTools import overlay, hoverlay, ensureDir, save, configureLegend, FindLooseId, ShiftAlongX, makeEffPlotsVars, FillSampledic
+from compareTools import overlay, hoverlay, ensureDir, save, configureLegend, findLooseId, shiftAlongX, makeEffPlotsVars, fillSampledic
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     release = args.release
     globaltag = args.globalTag
     if debug: print 'Producing plots for runtype', runtype, '\nRelease:', release, '\nGlobal tags:', globaltag
-    sampledict = FillSampledic([globaltag], [release], runtype, [inputfile], debug)
+    sampledict = fillSampledic([globaltag], [release], runtype, [inputfile], debug)
 
     RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
     options_dict = {
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             hdict = vardict[hname]
             if debug: print '\n', "*"*10, "\nhname:", hname, 
             if varyLooseId and 'IsolationMVA' in hname:
-                loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + FindLooseId(hname, debug=True)
+                loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + findLooseId(hname, debug=True)
 
             if debug: print "\nloose_id:", loose_id
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
                         debug=True)
                     )
 
-                    ShiftAlongX(hists[-1], len(variables), index, debug=False)
+                    shiftAlongX(hists[-1], len(variables), index, debug=False)
 
                     histseta.append(makeEffPlotsVars(tree=tree,
                         varx='tau_geneta',
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                         plotSeparateEff=False,
                         debug=False)
                     )
-                    ShiftAlongX(histseta[-1], len(variables), index, debug=False)
+                    shiftAlongX(histseta[-1], len(variables), index, debug=False)
 
         overlay(hists=hists, ytitle=hname,
             header=hname,

@@ -225,8 +225,8 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     if dryrun: return
     save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
 
-def FindLooseId(hname, debug=False):
-    if debug: print "FindLooseId::"
+def findLooseId(hname, debug=False):
+    if debug: print "findLooseId::"
 
     looseIdDict = {
         'tau_byLooseIsolationMVArun2v1DBoldDMwLT':  ['byLooseIsolationMVArun2v1DBoldDMwLT', 'byMediumIsolationMVArun2v1DBoldDMwLT', 'byTightIsolationMVArun2v1DBoldDMwLT'],
@@ -245,8 +245,8 @@ def FindLooseId(hname, debug=False):
 
     return 'tau_byLooseIsolationMVArun2v1DBoldDMwLT'
 
-def ShiftAlongX(tGraph, numberOfGraphs, index, debug=False):
-    if debug: print "\tShiftAlongX::"
+def shiftAlongX(tGraph, numberOfGraphs, index, debug=False):
+    if debug: print "\tshiftAlongX::"
 
     for binNumber in xrange(tGraph.GetN()):
         x = Double(-1)
@@ -308,7 +308,7 @@ def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle=''
     return g_efficiency
 
 
-def FillSampledic(globaltags, releases, runtype, inputfiles='', debug=False):
+def fillSampledic(globaltags, releases, runtype, inputfiles='', debug=False):
     if debug: print "Collecting samples"
 
     sampledict = {}

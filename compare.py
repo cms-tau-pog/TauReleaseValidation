@@ -15,7 +15,7 @@ import argparse
 from variables import vardict, hvardict
 
 from relValTools import addArguments
-from compareTools import overlay, hoverlay, ensureDir, save, configureLegend, FindLooseId, ShiftAlongX, makeEffPlotsVars, FillSampledic
+from compareTools import overlay, hoverlay, ensureDir, save, configureLegend, findLooseId, shiftAlongX, makeEffPlotsVars, fillSampledic
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     releases = args.releases
     globaltags = args.globalTags
     if debug: print 'Producing plots for runtype', runtype, '\nReleases:', releases, '\nGlobal tags:', globaltags
-    sampledict = FillSampledic(globaltags, releases, runtype, inputfiles, debug)
+    sampledict = fillSampledic(globaltags, releases, runtype, inputfiles, debug)
 
     RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
     options_dict = {
