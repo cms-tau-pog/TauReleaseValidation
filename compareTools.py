@@ -340,3 +340,4 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=[], debug=False):
         pp.pprint(sampledict)
 
     return sampledict
+
