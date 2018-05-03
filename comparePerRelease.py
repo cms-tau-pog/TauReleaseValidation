@@ -9,7 +9,7 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 from ROOT import gROOT, gStyle, TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex
 from officialStyle import officialStyle
 from array import array
-
+import warnings
 from collections import namedtuple
 import argparse
 from variables import vardict, hvardict
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         histseta = []
         for index, hname in enumerate(variables):
             hdict = vardict[hname]
+            oneOfTheInputHasNoLeaf = False
             if debug: print '\n', "*"*10, "\nhname:", hname, 
             if varyLooseId and 'IsolationMVA' in hname:
                 loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + findLooseId(hname, debug=True)
@@ -77,6 +78,10 @@ if __name__ == '__main__':
                 if debug:
                     print "\trel:", rel
                 tree = rdict['tree']
+                if not set(hdict['checkTree']).issubset([ x.GetName() for x in tree.GetListOfLeaves()]):
+                    warnings.warn(hname + ' is minning in input file ' + rdict['file'].GetName())
+                    oneOfTheInputHasNoLeaf = True
+                    break
                 num_sel = reco_cut
                 den_sel = '1'
                 den_sel_17v2 = '1'
@@ -119,7 +124,7 @@ if __name__ == '__main__':
                         debug=False)
                     )
                     shiftAlongX(histseta[-1], len(variables), index, debug=False)
-
+        if oneOfTheInputHasNoLeaf: continue
         overlay(hists=hists, ytitle=hname,
             header=hname,
             addon=hdict['title'],
@@ -152,8 +157,13 @@ if __name__ == '__main__':
         if runtype not in ['ZTT', 'TTbarTau'] and hname.find('pt_resolution') != -1: continue
 
         hists = []
+        oneOfTheInputHasNoLeaf = False
         for rel, rdict in sampledict.items():
             tree = rdict['tree']
+            if not set(hdict['checkTree']).issubset([ x.GetName() for x in tree.GetListOfLeaves()]):
+                warnings.warn(hname + ' is minning in input file ' + rdict['file'].GetName())
+                oneOfTheInputHasNoLeaf = True
+                break
             hist = TH1F('h_' + hname + '_' + rel, 'h_' + hname + '_' + rel, hdict['nbin'], hdict['min'], hdict['max'])
 
             hist.GetYaxis().SetNdivisions(507)
@@ -171,6 +181,7 @@ if __name__ == '__main__':
 
             hists.append(hist)
 
+        if oneOfTheInputHasNoLeaf: continue
         hoverlay(hists=hists,
             xtitle=hdict['title'],
             ytitle='a.u.',
