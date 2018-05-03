@@ -61,7 +61,7 @@ if __name__ == '__main__':
     loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + setLooseId + ' > 0.5'
     loose_id_17v2 = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017 > 0.5'
 
-    print "First part of plots"
+    if part == 2: print "First part of plots"
     if part in [0, 1]:
         hists = []
         histseta = []
@@ -145,12 +145,13 @@ if __name__ == '__main__':
             debug=False,
             comparePerReleaseSuffix = "_comparePerRelease")
 
+    print "End first part of plots"
     if part == 1: exit()
 
     print "Second part of plots"
     for index, (hname, hdict) in enumerate(hvardict.iteritems()):
         print  index, ":", hname
-        if   part == 2 and index >  len(hvardict.items()) / 2: exit()
+        if   part == 2 and index >  len(hvardict.items()) / 2: break
         elif part == 3 and index <= len(hvardict.items()) / 2: continue
         elif part == 3 and index - 1 == len(hvardict.items()) / 2: print "Third part of plots"
 

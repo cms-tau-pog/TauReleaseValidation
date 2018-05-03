@@ -146,6 +146,7 @@ def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerRel
     if header=="byLooseIsolationMVArun2017v2DBoldDMwLT2017": exit()
 
 def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, comparePerReleaseSuffix="", dryrun=False, debug=False):
+    if debug: print "hoverlay::"
     c = TCanvas()
 
     # Upper plot will be in pad1
@@ -154,7 +155,7 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     pad1.Draw()             # Draw the upper pad: pad1
     pad1.cd()              # pad1 becomes the current pad
     pad1.SetLogy(0)
-    if hname.find('isoPt') > -1 or hname.find('outOfConePt') > -1 or hname.find('IsoRaw') > -1: pad1.SetLogy()
+    if any(subname in name for subname in ['isoPt', 'outOfConePt', 'IsoRaw']): pad1.SetLogy()
 
     ymax = max([hist.GetMaximum() for hist in hists])
     leg = TLegend(0.2, 0.65, 0.91, 0.9)
@@ -184,6 +185,9 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
 
         leg.AddEntry(ihist, ihist.GetName(), "l")
 
+    if dryrun:
+        if debug: print "dryrun"
+        return
     leg.Draw()
 
     xshift = 0.87
@@ -222,7 +226,6 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
             ihist.Draw('epsame')
 
     c.cd()          # Go back to the main canvas
-    if dryrun: return
     save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
 
 def findLooseId(hname, debug=False):

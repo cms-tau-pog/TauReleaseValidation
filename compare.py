@@ -79,9 +79,9 @@ if __name__ == '__main__':
                 discriminators = {"loose_id": den_sel}
                 if 'against' in hname:
                     den_sel = reco_cut + ' && ' + loose_id
-                    den_sel_17v2 = reco_cut + ' && ' + loose_id_17v2
+                    # den_sel_17v2 = reco_cut + ' && ' + loose_id_17v2
                     discriminators["loose_id"] = den_sel
-                    discriminators["loose_id_17v2"] = den_sel_17v2
+                    # discriminators["loose_id_17v2"] = den_sel_17v2
 
 
                 for mvaIDname, sel in discriminators.items():
@@ -131,12 +131,13 @@ if __name__ == '__main__':
                 dryrun=dryRun,
                 debug=False)
 
+    print "End first part of plots"
     if part == 1: exit()
 
-    print "Second part of plots"
+    if part == 2: print "Second part of plots"
     for index, (hname, hdict) in enumerate(hvardict.iteritems()):
         print  index, ":", hname
-        if   part == 2 and index >  len(hvardict.items()) / 2: exit()
+        if   part == 2 and index >  len(hvardict.items()) / 2: break
         elif part == 3 and index <= len(hvardict.items()) / 2: continue
         elif part == 3 and index - 1 == len(hvardict.items()) / 2: print "Third part of plots"
 
@@ -176,6 +177,7 @@ if __name__ == '__main__':
             tlabel=options_dict[runtype].tlabel,
             xlabel=options_dict[runtype].xlabel,
             xlabel_eta=options_dict[runtype].xlabel_eta,
-            dryrun=dryRun)
+            dryrun=dryRun,
+            debug=debug)
 
     print "Finished"
