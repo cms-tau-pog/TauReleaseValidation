@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
-from relValTools import *
+import os
+from relValTools import getFilesFromEOS, getFilesFromDAS, runtype_to_sample, test_files
 
 ######## Parsing options ########
 from FWCore.ParameterSet.VarParsing import VarParsing
