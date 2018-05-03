@@ -2,7 +2,7 @@ import os
 import argparse
 import subprocess
 import pprint
-pp = pprint(tabs= 4)
+pp = pprint.PrettyPrinter(indent=4)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
