@@ -79,7 +79,7 @@ if __name__ == '__main__':
                     print "\trel:", rel
                 tree = rdict['tree']
                 if not set(hdict['checkTree']).issubset([ x.GetName() for x in tree.GetListOfLeaves()]):
-                    warnings.warn(hname + ' is minning in input file ' + rdict['file'].GetName())
+                    warnings.warn(hname + ' is missing in input file ' + rdict['file'].GetName())
                     oneOfTheInputHasNoLeaf = True
                     break
                 num_sel = reco_cut
@@ -162,7 +162,7 @@ if __name__ == '__main__':
         for rel, rdict in sampledict.items():
             tree = rdict['tree']
             if not set(hdict['checkTree']).issubset([ x.GetName() for x in tree.GetListOfLeaves()]):
-                warnings.warn(hname + ' is minning in input file ' + rdict['file'].GetName())
+                warnings.warn(hname + ' is missing in input file ' + rdict['file'].GetName())
                 oneOfTheInputHasNoLeaf = True
                 break
             hist = TH1F('h_' + hname + '_' + rel, 'h_' + hname + '_' + rel, hdict['nbin'], hdict['min'], hdict['max'])
