@@ -31,7 +31,7 @@ if __name__ == '__main__':
     debug = args.debug
     scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]
 
-    runtype = ' '+args.runtype
+    runtype = ' ' + args.runtype
 
     commands = []
     for i, relval in enumerate(RelVals):

@@ -14,8 +14,8 @@ from collections import namedtuple
 import argparse
 from variables import vardict, hvardict
 
-from relValTools import *
-from compareTools import *
+from relValTools import addArguments
+from compareTools import overlay, hoverlay, ensureDir, save, configureLegend, FindLooseId, ShiftAlongX, makeEffPlotsVars, FillSampledic
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
