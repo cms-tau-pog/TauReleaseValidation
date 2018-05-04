@@ -1,35 +1,75 @@
 import os
 import argparse
+import subprocess
+
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, get_cmssw_version, get_cmssw_version_number, versionToInt, is_above_cmssw_version, runtype_to_sample
+
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('runtype', choices=['ZTT', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT'], help='choose sample type')
-
-    parser.add_argument('-r', '--relval',  help='Release strings, separated by comma', default='CMSSW_9_4_0_pre2,CMSSW_9_4_0_pre3')
-    parser.add_argument('-g', '--globalTag',  help='Global tags, separated by comma', default='94X_mc2017_realistic_v1-v1,94X_mc2017_realistic_v4-v1')
-    parser.add_argument('-n', '--maxEvents',  help='Number of events that will be analyzed (-1 = all events)', default=-1)
-    parser.add_argument('-u', '--useRecoJets', action="store_true",  help='Use RecoJets', default=False)
-    parser.add_argument('-b', '--onebin', action="store_true",  help='Plot inclusive efficiencies by only using one bin', default=False)
-
+    addArguments(parser, compare=True)
     args = parser.parse_args()
-        
-    maxEvents = ' -n'+args.maxEvents if args.maxEvents > -1 else ''
-    RelVals = args.relval.split(',')
-    globalTags = args.globalTag.split(',')
-    useRecoJets = ' -u' if args.useRecoJets else ''
-    onebin = ' -b' if args.onebin else ''
-    path = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]
 
-    runtype = ' '+args.runtype
+    runtype = args.runtype
+    globalTags = args.globalTags
+    maxEvents = args.maxEvents
+    RelVals = args.releases
+    useRecoJets = args.useRecoJets
+    storageSite = args.storageSite
+    tauCollection = args.tauCollection
+    onebin = args.onebin
+    debug = args.debug
+    dryRun = args.dryRun
+    inputfiles = args.inputfiles
+    outputFileName = args.outputFileName
+
+    localdir = args.localdir
+    if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
+
+    mvaid = args.mvaid
+    mvaidstr = " --mvaid "
+    for id in mvaid:
+        mvaidstr += id + " "
+
+    scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]
+
+    dd = ""
+    if dryRun: dd = " --dryRun "
+    if debug: dd += " --debug"
+
+
+
+    for i, relval in enumerate(RelVals):
+        print "===================="
+        inputfile = ""
+        if len(inputfiles) > 0:
+            inputfile = ' --inputfile ' + inputfiles[i]
+        subcommand = 'python ' + scriptPath + 'produceTauValTree.py -r ' + relval + ' -g ' + globalTags[i] + inputfile  + ' --runtype ' + runtype + ' -n ' + str(maxEvents) + useRecoJets * ' -u ' + ' -s ' + storageSite + " -l " + localdir + " --tauCollection " + tauCollection + mvaidstr + dd
+        # + (len(outputFileName) > 0) * (" --outputFileName " + outputFileName)
+
+        print subcommand
+        result = subprocess.check_output(subcommand, shell=True)
+        pp.pprint(result)
+
+    if onebin: onebin = ' -b'
+    else: onebin = ''
+
+    globalTagsstr = ""
+    for i in globalTags:
+        globalTagsstr += str(i) + " "
+
+    releases = ""
+    for i in RelVals:
+        releases += str(i) + " "
 
     commands = []
-    for i, relval in enumerate(RelVals):
-        commands.append('python '+path+'produceTauValTree.py -r '+relval+' -g '+globalTags[i]+runtype+maxEvents+useRecoJets)
-    commands.append('python '+path+'compare.py -r '+args.relval+' -g '+args.globalTag+runtype+onebin+' -p 1')
-    commands.append('python '+path+'compare.py -r '+args.relval+' -g '+args.globalTag+runtype+onebin+' -p 2')
-    commands.append('python '+path+'compare.py -r '+args.relval+' -g '+args.globalTag+runtype+onebin+' -p 3')
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 1' + dd)
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 2' + dd)
+    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 3' + dd)
 
     for command in commands:
         print "===================="

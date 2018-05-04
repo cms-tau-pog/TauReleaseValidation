@@ -26,18 +26,22 @@ gStyle.SetOptTitle(0)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser, compare=True)
+    addArguments(parser, comparePerRelease=True)
     args = parser.parse_args()
     part = args.part
     dryRun = args.dryRun
     debug = args.debug
-    inputfiles = args.inputfiles
+    inputfile = args.inputfile
 
+    setLooseId = args.setLooseId
+    varyLooseId = args.varyLooseId
+    variables = args.variables
+    colors = args.colors
     runtype = args.runtype
-    releases = args.releases
-    globaltags = args.globalTags
-    if debug: print 'Producing plots for runtype', runtype, '\nReleases:', releases, '\nGlobal tags:', globaltags
-    sampledict = fillSampledic(globaltags, releases, runtype, inputfiles, debug)
+    release = args.release
+    globaltag = args.globalTag
+    if debug: print 'Producing plots for runtype', runtype, '\nRelease:', release, '\nGlobal tags:', globaltag
+    sampledict = fillSampledic([globaltag], [release], runtype, [inputfile], debug)
 
     RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
     options_dict = {
@@ -53,17 +57,22 @@ if __name__ == '__main__':
     etaPlotsBinning = array('d', [-2.4, 2]) if args.onebin else array('d', [round(-2.4 + i*0.4,1) for i in range(0, 12 + 1)])
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
     #loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
-    loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
+    #loose_id = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
+    loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + setLooseId + ' > 0.5'
     loose_id_17v2 = 'tau_decayModeFindingOldDMs > 0.5 && tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017 > 0.5'
 
-    print "First part of plots"
+    if part == 2: print "First part of plots"
     if part in [0, 1]:
-        for hname, hdict in vardict.items():
-            if debug:
-                print '\n', "*"*10, "\nhname:", hname
-            hists = []
-            histseta = []
+        hists = []
+        histseta = []
+        for index, hname in enumerate(variables):
+            hdict = vardict[hname]
             oneOfTheInputHasNoLeaf = False
+            if debug: print '\n', "*"*10, "\nhname:", hname, 
+            if varyLooseId and 'IsolationMVA' in hname:
+                loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + findLooseId(hname, debug=True)
+
+            if debug: print "\nloose_id:", loose_id
 
             for rel, rdict in sampledict.items():
                 if debug:
@@ -79,10 +88,8 @@ if __name__ == '__main__':
                 discriminators = {"loose_id": den_sel}
                 if 'against' in hname:
                     den_sel = reco_cut + ' && ' + loose_id
-                    # den_sel_17v2 = reco_cut + ' && ' + loose_id_17v2
-                    discriminators["loose_id"] = den_sel
-                    # discriminators["loose_id_17v2"] = den_sel_17v2
-
+                    den_sel_17v2 = reco_cut + ' && ' + loose_id_17v2
+                    discriminators["loose_id_17v2"] = den_sel_17v2
 
                 for mvaIDname, sel in discriminators.items():
                     print "\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var']
@@ -92,49 +99,56 @@ if __name__ == '__main__':
                         numeratorAddSelection=num_sel + '&&' + hdict['var'],
                         baseSelection=sel + '&& abs(tau_eta) < 2.3',
                         xtitle=options_dict[runtype].xlabel,
-                        header=rel + mvaIDname, addon=rel + mvaIDname,
+                        header=hname + mvaIDname, addon=hname + mvaIDname,
                         option='pt',
-                        marker=rdict['marker'] + 1 * (mvaIDname == "loose_id_17v2"),
-                        col=rdict['col'],
+                        marker=rdict['marker'] + 1*(mvaIDname=="loose_id_17v2"),
+                        col=int(colors[index]),
                         ptPlotsBinning=ptPlotsBinning,
+                        plotSeparateEff=False,
                         debug=True)
                     )
+
+                    shiftAlongX(hists[-1], len(variables), index, debug=False)
 
                     histseta.append(makeEffPlotsVars(tree=tree,
                         varx='tau_geneta',
                         numeratorAddSelection=num_sel + '&&' + hdict['var'],
                         baseSelection=sel + '&& tau_pt>20',
                         xtitle=options_dict[runtype].xlabel_eta,
-                        header=rel + mvaIDname, addon=rel + mvaIDname,
+                        header=hname + mvaIDname, addon=hname + mvaIDname,
                         option='eta',
-                        marker=rdict['marker'] + 1 * (mvaIDname == "loose_id_17v2"),
-                        col=rdict['col'],
+                        marker=rdict['marker'] + 1*(mvaIDname=="loose_id_17v2"),
+                        col=int(colors[index]),
                         ptPlotsBinning=etaPlotsBinning,
+                        plotSeparateEff=False,
                         debug=False)
                     )
-            if oneOfTheInputHasNoLeaf: continue
-            overlay(hists=hists, ytitle=hname,
-                header=hname,
-                addon=hdict['title'],
-                runtype=runtype,
-                tlabel=options_dict[runtype].tlabel,
-                xlabel=options_dict[runtype].xlabel,
-                dryrun=dryRun,
-                debug=True)
+                    shiftAlongX(histseta[-1], len(variables), index, debug=False)
+        if oneOfTheInputHasNoLeaf: continue
+        overlay(hists=hists, ytitle=hname,
+            header=hname,
+            addon=hdict['title'],
+            runtype=runtype,
+            tlabel=options_dict[runtype].tlabel,
+            xlabel=options_dict[runtype].xlabel,
+            dryrun=dryRun,
+            debug=False,
+            comparePerReleaseSuffix = "_comparePerRelease")
 
-            overlay(hists=histseta, ytitle=hname,
-                header=hname + '_eta',
-                addon=hdict['title'] + '_eta',
-                runtype=runtype,
-                tlabel=options_dict[runtype].tlabel,
-                xlabel=options_dict[runtype].xlabel,
-                dryrun=dryRun,
-                debug=False)
+        overlay(hists=histseta, ytitle=hname,
+            header=hname + '_eta',
+            addon=hdict['title'] + '_eta',
+            runtype=runtype,
+            tlabel=options_dict[runtype].tlabel,
+            xlabel=options_dict[runtype].xlabel,
+            dryrun=dryRun,
+            debug=False,
+            comparePerReleaseSuffix = "_comparePerRelease")
 
     print "End first part of plots"
     if part == 1: exit()
 
-    if part == 2: print "Second part of plots"
+    print "Second part of plots"
     for index, (hname, hdict) in enumerate(hvardict.iteritems()):
         print  index, ":", hname
         if   part == 2 and index >  len(hvardict.items()) / 2: break
@@ -178,6 +192,7 @@ if __name__ == '__main__':
             xlabel=options_dict[runtype].xlabel,
             xlabel_eta=options_dict[runtype].xlabel_eta,
             dryrun=dryRun,
-            debug=debug)
-
+            comparePerReleaseSuffix = "_comparePerRelease")
+    
     print "Finished"
+
