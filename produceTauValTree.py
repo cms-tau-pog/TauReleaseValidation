@@ -2,30 +2,29 @@
 Authors: Yuta Takahashi, Michal Bluj, Jan Steggemann.
 '''
 
-import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True
-
 import math
 import sys
-import re
+import os
 import argparse
-import numpy as num
 import copy
+import subprocess
+import numpy as num
 
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample
 
-import eostools
-from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, get_cmssw_version, get_cmssw_version_number, versionToInt, is_above_cmssw_version, runtype_to_sample
+import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 ROOT.gROOT.SetBatch(True)
 
 
-class Var:
-    def __init__(self, name, type):
+class Var(object):
+    def __init__(self, name, vtype):
         self.name = name
-        self.type = type
+        self.type = vtype
         self.storage = None
 
     def reset(self):
@@ -38,19 +37,27 @@ class Var:
         self.storage[0] += val
 
     def __str__(self):
-        return 'Var: name={}, type={}, val={:.2f}'.format(self.name, self.type, self.storage[0])
+        return 'Var: name={}, vtype={}, val={:.2f}'.format(self.name, self.type, self.storage[0])
+
 
 def returnRough(dm):
-    if dm in [0]: return 0
-    elif dm in [1, 2]: return 1
-    elif dm in [5, 6]: return 2
-    elif dm in [10]:  return 3
-    elif dm in [11]: return 4
+    if dm in [0]:
+        return 0
+    elif dm in [1, 2]:
+        return 1
+    elif dm in [5, 6]:
+        return 2
+    elif dm in [10]:
+        return 3
+    elif dm in [11]:
+        return 4
     else:
         return -1
 
+
 def finalDaughters(gen, daughters=None):
-    if daughters is None: daughters = []
+    if daughters is None:
+        daughters = []
     for i in range(gen.numberOfDaughters()):
         daughter = gen.daughter(i)
         if daughter.numberOfDaughters() == 0:
@@ -60,38 +67,82 @@ def finalDaughters(gen, daughters=None):
 
     return daughters
 
+
 def visibleP4(gen):
     final_ds = finalDaughters(gen)
 
     return sum((d.p4() for d in final_ds if abs(d.pdgId()) not in [12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
 
-def GetNonTauJets(jets1, genLeptons, runtype='ZTT', debug=False):
-    jets = []
 
-    if jets1 is None or genLeptons is None: print "genLeptons or initial list of/and jets is empty"
-    else:
-        for jet in jets1:
-            keepjet = True
-            for lep in genLeptons:
-                if deltaR(jet.eta(), jet.phi(), lep.eta(), lep.phi()) < 0.5:
-                    keepjet = False
-                    break
+def getNonTauJets(all_jets, gen_leptons):
+    non_tau_jets = []
+    for j_cand in all_jets:
+        if not any(deltaR(j_cand, lep) < 0.5 for lep in gen_leptons):
+            non_tau_jets.append(j_cand)
 
-            if keepjet: jets.append(jet)
+    return non_tau_jets
 
-        if debug and len(jets1) != len(jets):
-            print 'genLep', len(genLeptons), 'jets1: ', len(jets1), 'jets', len(jets)
+def fill_tau_ids(avd, tau_ids):
+    for (tau_id, _) in tau_ids:
+        avd['tau_'+tau_id].fill(tau.tauID(tau_id))
 
-            if runtype not in  ['ZTT', 'ZEE', 'ZMM', 'TTbarTau']:
-                for lep in genLeptons:
-                    print 'lep pt=', lep.pt(), 'eta=', lep.eta(), 'pdgid=', lep.pdgId()
-    return jets
+all_tau_ids = [
+    ('againstMuonLoose3', int),
+    ('againstMuonTight3', int),
+    ('byIsolationMVA3oldDMwLTraw', float),
+    ('byLooseIsolationMVA3oldDMwLT', int),
+    ('byMediumIsolationMVA3oldDMwLT', int),
+    ('byTightIsolationMVA3oldDMwLT', int),
+    ('byVLooseIsolationMVA3oldDMwLT', int),
+    ('byVTightIsolationMVA3oldDMwLT', int),
+    ('byVVTightIsolationMVA3oldDMwLT', int),
+    ('byCombinedIsolationDeltaBetaCorrRaw3Hits', float),
+    ('byLooseCombinedIsolationDeltaBetaCorr3Hits', int),
+    ('byMediumCombinedIsolationDeltaBetaCorr3Hits', int),
+    ('byTightCombinedIsolationDeltaBetaCorr3Hits', int),
+    ('byIsolationMVArun2v1DBoldDMwLTraw', float),
+    ('byVLooseIsolationMVArun2v1DBoldDMwLT', int),
+    ('byLooseIsolationMVArun2v1DBoldDMwLT', int),
+    ('byMediumIsolationMVArun2v1DBoldDMwLT', int),
+    ('byTightIsolationMVArun2v1DBoldDMwLT', int),
+    ('byVTightIsolationMVArun2v1DBoldDMwLT', int),
+    ('byVVTightIsolationMVArun2v1DBoldDMwLT', int),
+    ('byIsolationMVArun2v1PWoldDMwLTraw', float),
+    ('byLooseIsolationMVArun2v1PWoldDMwLT', int),
+    ('byMediumIsolationMVArun2v1PWoldDMwLT', int),
+    ('byTightIsolationMVArun2v1PWoldDMwLT', int),
+    ('byVLooseIsolationMVArun2v1PWoldDMwLT', int),
+    ('byVTightIsolationMVArun2v1PWoldDMwLT', int),
+    ('byVVTightIsolationMVArun2v1PWoldDMwLT', int),
+    ('byIsolationMVArun2v1DBdR03oldDMwLTraw', float),
+    ('byLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byMediumIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byVVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('chargedIsoPtSum', float),
+    ('neutralIsoPtSum', float),
+    ('puCorrPtSum', float),
+    ('neutralIsoPtSumWeight', float),
+    ('footprintCorrection', float),
+    ('photonPtSumOutsideSignalCone', float),
+    ('decayModeFindingOldDMs', int),
+    ('decayModeFindingNewDMs', int),
+    ('againstElectronVLooseMVA6', int),
+    ('againstElectronLooseMVA6', int),
+    ('againstElectronMediumMVA6', int),
+    ('againstElectronTightMVA6', int),
+    ('againstElectronVTightMVA6', int),
+    ('againstElectronMVA6raw', float),
+]
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     addArguments(parser, compare=False)
     args = parser.parse_args()
-        
+
     maxEvents = args.maxEvents
     RelVal = args.release
     globalTag = args.globalTag
@@ -100,7 +151,8 @@ if __name__ == '__main__':
     localdir = args.localdir
     tauCollection = args.tauCollection
     mvaid = args.mvaid
-    if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
+    if len(localdir) > 1 and localdir[-1] != "/":
+        localdir += "/"
     debug = args.debug
     inputfile = args.inputfile
 
@@ -117,13 +169,19 @@ if __name__ == '__main__':
     if inputfile != "":
         filelist = [inputfile]
     else:
-        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
+        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(
+            RelVal, runtype_to_sample[runtype], globalTag)
 
-        if storageSite == "eos": filelist = getFilesFromEOS(path)
-        elif storageSite == "das": filelist = getFilesFromDAS(RelVal, runtype_to_sample[runtype], globalTag)
-        elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
+        if storageSite == "eos":
+            filelist = getFilesFromEOS(path)
+        elif storageSite == "das":
+            filelist = getFilesFromDAS(
+                RelVal, runtype_to_sample[runtype], globalTag)
+        elif storageSite == 'loc':
+            filelist = getFilesFromEOS(
+                localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
 
-        if len(filelist) == 0:
+        if not filelist:
             print 'Sample', RelVal, runtype, 'does not exist in', path
             sys.exit(0)
 
@@ -132,16 +190,21 @@ if __name__ == '__main__':
 
     ######## Output file ########
     outputFileName = args.outputFileName
-    if len(outputFileName) == 0:
+    if not outputFileName:
         if storageSite == 'loc':
-            outputFileName = localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/' + 'TauValTree/'
+            outputFileName = localdir + \
+                runtype_to_sample[runtype] + "/" + RelVal + \
+                '-' + globalTag + '/' + 'TauValTree/'
             if not os.path.isdir(outputFileName):
-                result = subprocess.check_output("mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
+                result = subprocess.check_output(
+                    "mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
 
         genJetssuffix = ""
-        if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'): genJetssuffix = "_genJets"
+        if not useRecoJets and (runtype == 'QCD' or runtype == 'TTBar'):
+            genJetssuffix = "_genJets"
 
-        outputFileName += 'Myroot_' + RelVal + '_' + globalTag + '_' + runtype + genJetssuffix + '.root'
+        outputFileName += 'Myroot_' + RelVal + '_' + \
+            globalTag + '_' + runtype + genJetssuffix + '.root'
     else:
         if "/" in outputFileName and outputFileName[0] != "/":
             print "location of output file has a dir structure but doesn't start with dash"
@@ -152,7 +215,7 @@ if __name__ == '__main__':
 
     print "outputFileName:", outputFileName
 
-    file = ROOT.TFile(outputFileName, 'recreate')
+    out_file = ROOT.TFile(outputFileName, 'recreate')
 
     h_ngen = ROOT.TH1F("h_ngen", "h_ngen", 10, 0, 10)
     h_pfch_pt = ROOT.TH1F("h_pfch_pt", "pfch;p_{T} (GeV)", 500, 0, 500)
@@ -196,54 +259,6 @@ if __name__ == '__main__':
         Var('tau_iso_neu', float),
         Var('tau_iso_puppi', float),
         Var('tau_iso_puppiNoL', float),
-        Var('tau_againstMuonLoose3', int),
-        Var('tau_againstMuonTight3', int),
-        Var('tau_byIsolationMVA3oldDMwLTraw', float),
-        Var('tau_byLooseIsolationMVA3oldDMwLT', int),
-        Var('tau_byMediumIsolationMVA3oldDMwLT', int),
-        Var('tau_byTightIsolationMVA3oldDMwLT', int),
-        Var('tau_byVLooseIsolationMVA3oldDMwLT', int),
-        Var('tau_byVTightIsolationMVA3oldDMwLT', int),
-        Var('tau_byVVTightIsolationMVA3oldDMwLT', int),
-        Var('tau_byCombinedIsolationDeltaBetaCorrRaw3Hits', float),
-        Var('tau_byLooseCombinedIsolationDeltaBetaCorr3Hits', int),
-        Var('tau_byMediumCombinedIsolationDeltaBetaCorr3Hits', int),
-        Var('tau_byTightCombinedIsolationDeltaBetaCorr3Hits', int),
-        Var('tau_byIsolationMVArun2v1DBoldDMwLTraw', float),
-        Var('tau_byVLooseIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byLooseIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byMediumIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byVTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byVVTightIsolationMVArun2v1DBoldDMwLT', int),
-        Var('tau_byIsolationMVArun2v1PWoldDMwLTraw', float),
-        Var('tau_byLooseIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byMediumIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byTightIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVLooseIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVTightIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byVVTightIsolationMVArun2v1PWoldDMwLT', int),
-        Var('tau_byIsolationMVArun2v1DBdR03oldDMwLTraw', float),
-        Var('tau_byLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_byMediumIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_byTightIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_byVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_byVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_byVVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
-        Var('tau_chargedIsoPtSum', float),
-        Var('tau_neutralIsoPtSum', float),
-        Var('tau_puCorrPtSum', float),
-        Var('tau_neutralIsoPtSumWeight', float),
-        Var('tau_footprintCorrection', float),
-        Var('tau_photonPtSumOutsideSignalCone', float),
-        Var('tau_decayModeFindingOldDMs', int),
-        Var('tau_decayModeFindingNewDMs', int),
-        Var('tau_againstElectronVLooseMVA6', int),
-        Var('tau_againstElectronLooseMVA6', int),
-        Var('tau_againstElectronMediumMVA6', int),
-        Var('tau_againstElectronTightMVA6', int),
-        Var('tau_againstElectronVTightMVA6', int),
-        Var('tau_againstElectronMVA6raw', float),
         Var('tau_dxy', float),
         Var('tau_dxy_err', float),
         Var('tau_dxy_sig', float),
@@ -255,54 +270,60 @@ if __name__ == '__main__':
     ]
 
     if "2017v2" in mvaid:
-        all_vars.extend([Var("tau_byIsolationMVArun2017v2DBoldDMwLTraw2017", float),
-            Var("tau_byVVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byMediumIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byTightIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byVTightIsolationMVArun2017v2DBoldDMwLT2017", int),
-            Var("tau_byVVTightIsolationMVArun2017v2DBoldDMwLT2017", int)])
+        all_tau_ids += [("byIsolationMVArun2017v2DBoldDMwLTraw2017", float),
+                         ("byVVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byVLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byLooseIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byMediumIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byTightIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byVTightIsolationMVArun2017v2DBoldDMwLT2017", int),
+                         ("byVVTightIsolationMVArun2017v2DBoldDMwLT2017", int)]
     if "2017v1" in mvaid:
-        all_vars.extend([Var("tau_byIsolationMVArun2017v1DBoldDMwLTraw2017", float),
-            Var("tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byMediumIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byTightIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byVTightIsolationMVArun2017v1DBoldDMwLT2017", int),
-            Var("tau_byVVTightIsolationMVArun2017v1DBoldDMwLT2017", int)])
+        all_tau_ids += [("byIsolationMVArun2017v1DBoldDMwLTraw2017", float),
+                         ("byVVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byVLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byLooseIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byMediumIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byTightIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byVTightIsolationMVArun2017v1DBoldDMwLT2017", int),
+                         ("byVVTightIsolationMVArun2017v1DBoldDMwLT2017", int)]
     if "2016v1" in mvaid:
-        all_vars.extend([Var("tau_byIsolationMVArun2v1DBoldDMwLTraw2016", float),
-        Var("tau_byVLooseIsolationMVArun2v1DBoldDMwLT2016", int),
-        Var("tau_byLooseIsolationMVArun2v1DBoldDMwLT2016", int),
-        Var("tau_byMediumIsolationMVArun2v1DBoldDMwLT2016", int),
-        Var("tau_byTightIsolationMVArun2v1DBoldDMwLT2016", int),
-        Var("tau_byVTightIsolationMVArun2v1DBoldDMwLT2016", int),
-        Var("tau_byVVTightIsolationMVArun2v1DBoldDMwLT2016", int)])
+        all_tau_ids += [("byIsolationMVArun2v1DBoldDMwLTraw2016", float),
+                         ("byVLooseIsolationMVArun2v1DBoldDMwLT2016", int),
+                         ("byLooseIsolationMVArun2v1DBoldDMwLT2016", int),
+                         ("byMediumIsolationMVArun2v1DBoldDMwLT2016", int),
+                         ("byTightIsolationMVArun2v1DBoldDMwLT2016", int),
+                         ("byVTightIsolationMVArun2v1DBoldDMwLT2016", int),
+                         ("byVVTightIsolationMVArun2v1DBoldDMwLT2016", int)]
     if "newDM2016v1" in mvaid:
-        all_vars.extend([Var("tau_byIsolationMVArun2v1DBnewDMwLTraw2016", float),
-        Var("tau_byVLooseIsolationMVArun2v1DBnewDMwLT2016", int),
-        Var("tau_byLooseIsolationMVArun2v1DBnewDMwLT2016", int),
-        Var("tau_byMediumIsolationMVArun2v1DBnewDMwLT2016", int),
-        Var("tau_byTightIsolationMVArun2v1DBnewDMwLT2016", int),
-        Var("tau_byVTightIsolationMVArun2v1DBnewDMwLT2016", int),
-        Var("tau_byVVTightIsolationMVArun2v1DBnewDMwLT2016", int)])
+        all_tau_ids += [("byIsolationMVArun2v1DBnewDMwLTraw2016", float),
+                         ("byVLooseIsolationMVArun2v1DBnewDMwLT2016", int),
+                         ("byLooseIsolationMVArun2v1DBnewDMwLT2016", int),
+                         ("byMediumIsolationMVArun2v1DBnewDMwLT2016", int),
+                         ("byTightIsolationMVArun2v1DBnewDMwLT2016", int),
+                         ("byVTightIsolationMVArun2v1DBnewDMwLT2016", int),
+                         ("byVVTightIsolationMVArun2v1DBnewDMwLT2016", int)]
     if "dR0p32017v2" in mvaid:
-        all_vars.extend([Var("tau_byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017", float),
-        Var("tau_byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
-        Var("tau_byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int)])
+        all_tau_ids += [("byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017", float),
+                         ("byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int),
+                         ("byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017", int)]
+
+    for (tau_id, v_type) in all_tau_ids:
+        all_vars.append('tau_'+tau_id, v_type)
+
+
 
     all_var_dict = {var.name: var for var in all_vars}
 
     for var in all_vars:
         var.storage = num.zeros(1, dtype=var.type)
-        tau_tree.Branch(var.name, var.storage, var.name + '/'+('I' if var.type == int else 'D'))
+        tau_tree.Branch(var.name, var.storage, var.name +
+                        '/'+('I' if var.type == int else 'D'))
 
     evtid = 0
 
@@ -326,7 +347,8 @@ if __name__ == '__main__':
 
         if evtid % 1000 == 0:
             print 'Event ', evtid, 'processed'
-        if evtid > maxEvents and maxEvents > 0: break
+        if evtid > maxEvents and maxEvents > 0:
+            break
 
         event.getByLabel(tauCollection, tauH)
         event.getByLabel("offlineSlimmedPrimaryVertices", vertexH)
@@ -363,41 +385,53 @@ if __name__ == '__main__':
         vertices = vertexH.product()
         puInfo = puH.product()
         genParticles = genParticlesH.product()
-        jets1    = [jet for jet in jetH.product()    if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
-        genJets1 = [jet for jet in genJetH.product() if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
+        jets1 = [jet for jet in jetH.product() if jet.pt() > 20 and abs(
+            jet.eta()) < 2.3 and jet.pt() < 200.5]
+        genJets1 = [jet for jet in genJetH.product() if jet.pt(
+        ) > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
 
-        genTaus = [p for p in genParticles if abs(p.pdgId()) == 15 and p.isPromptDecayed()]
+        genTaus = [p for p in genParticles if abs(
+            p.pdgId()) == 15 and p.isPromptDecayed()]
 
-        accompanyingLeptonCondition = lambda p, pid: ( abs(p.pdgId()) == pid \
-            and p.status() == 1 \
-            and (p.isPromptFinalState() or p.isDirectPromptTauDecayProductFinalState()) \
-            and p.pt() > 20 \
-            and abs(p.eta()) < 2.3)
+        def accompanyingLeptonCondition(p, pid): 
+            return (abs(p.pdgId()) == pid
+                    and p.status() == 1
+                    and (p.isPromptFinalState() or p.isDirectPromptTauDecayProductFinalState())
+                    and p.pt() > 20
+                    and abs(p.eta()) < 2.3)
 
-        genElectrons = [p for p in genParticles if accompanyingLeptonCondition(p, 11)]
-        genMuons     = [p for p in genParticles if accompanyingLeptonCondition(p, 13)]
+        genElectrons = [
+            p for p in genParticles if accompanyingLeptonCondition(p, 11)]
+        genMuons = [
+            p for p in genParticles if accompanyingLeptonCondition(p, 13)]
 
         # gen leptons to clean jets with respect to them (e.g. for TTBar)
-        genLeptons = [p for p in genParticles if \
-            p.status() == 1 and p.pt() > 15
-            and (( (abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) \
-                or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
+        genLeptons = [p for p in genParticles if
+                      p.status() == 1 and p.pt() > 15
+                      and (((abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState())
+                           or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
 
-        if debug: print "Jets processing:"
-        jets = GetNonTauJets(jets1, genLeptons, runtype, debug)
+        if debug:
+            print "Jets processing:"
+        jets = getNonTauJets(jets1, genLeptons)
 
-        if debug: print "GenJets processing:"
-        genJets = GetNonTauJets(genJets1, genLeptons, runtype, debug)
+        if debug:
+            print "GenJets processing:"
+        genJets = getNonTauJets(genJets1, genLeptons)
 
         refObjs = []
         if runtype in ['ZTT', 'TTbarTau']:
             for igen in genTaus:
                 visP4 = visibleP4(igen)
 
-                gen_dm = tauDecayModes.genDecayModeInt([d for d in finalDaughters(igen) if abs(d.pdgId()) not in [12, 14, 16]])
-                if abs(visP4.eta()) > 2.3: continue
-                if visP4.pt() < 10: continue
-                if gen_dm == -11 or gen_dm == -13: continue
+                gen_dm = tauDecayModes.genDecayModeInt(
+                    [d for d in finalDaughters(igen) if abs(d.pdgId()) not in [12, 14, 16]])
+                if abs(visP4.eta()) > 2.3:
+                    continue
+                if visP4.pt() < 10:
+                    continue
+                if gen_dm == -11 or gen_dm == -13:
+                    continue
 
                 refObjs.append(igen)
 
@@ -408,10 +442,14 @@ if __name__ == '__main__':
                 #tau_geneta[0] = gp.vis.eta()
                 #tau_genphi[0] = gp.vis.phi()
         elif runtype in ['QCD', 'TTbar']:
-            if useRecoJets:    refObjs = copy.deepcopy(jets)
-            else:              refObjs = copy.deepcopy(genJets)
-        elif runtype == 'ZEE': refObjs = copy.deepcopy(genElectrons)
-        elif runtype == 'ZMM': refObjs = copy.deepcopy(genMuons)
+            if useRecoJets:
+                refObjs = copy.deepcopy(jets)
+            else:
+                refObjs = copy.deepcopy(genJets)
+        elif runtype == 'ZEE':
+            refObjs = copy.deepcopy(genElectrons)
+        elif runtype == 'ZMM':
+            refObjs = copy.deepcopy(genMuons)
 
         ###
         h_ngen.Fill(len(refObjs))
@@ -429,7 +467,8 @@ if __name__ == '__main__':
 
             if runtype == 'ZTT' or runtype == 'TTbarTau':
                 visP4 = visibleP4(refObj)
-                gen_dm = tauDecayModes.genDecayModeInt([d for d in finalDaughters(refObj) if abs(d.pdgId()) not in [12, 14, 16]])
+                gen_dm = tauDecayModes.genDecayModeInt(
+                    [d for d in finalDaughters(refObj) if abs(d.pdgId()) not in [12, 14, 16]])
                 all_var_dict['tau_gendm'].fill(gen_dm)
                 all_var_dict['tau_gendm_rough'].fill(returnRough(gen_dm))
                 all_var_dict['tau_genpt'].fill(visP4.pt())
@@ -457,7 +496,8 @@ if __name__ == '__main__':
                 # Fill reco-tau variables if it exists...
                 NMatchedTaus += 1
 
-                if debug: print tau
+                if debug:
+                    print tau
 
                 all_var_dict['tau_dm'].fill(tau.decayMode())
                 all_var_dict['tau_dm_rough'].fill(returnRough(tau.decayMode()))
@@ -477,11 +517,12 @@ if __name__ == '__main__':
                 #        tau_vertex_idxpf = i
 
                 tau_tauVtxTovtx_dz = 99
-                for i in range(0, len(vertices)):
+                for i, vertex in enumerate(vertices):
 
-                    if i == tau_vertex_idxpf: continue
+                    if i == tau_vertex_idxpf:
+                        continue
 
-                    vtxdz = abs(vertices[i].z() - vertices[tau_vertex_idxpf].z())
+                    vtxdz = abs(vertex.z() - vertices[tau_vertex_idxpf].z())
                     if vtxdz < tau_tauVtxTovtx_dz:
                         tau_tauVtxTovtx_dz = vtxdz
 
@@ -496,31 +537,40 @@ if __name__ == '__main__':
 
                 for cand in tau.isolationChargedHadrCands():
 
-                    if not abs(cand.charge()) > 0: continue
-                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5: continue
+                    if not abs(cand.charge()) > 0:
+                        continue
+                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5:
+                        continue
 
                     if is_above_cmssw_version(9, 2, 0, debug):
-                        if cand.hasTrackDetails(): tt = cand.pseudoTrack()
-                        elif debug: print "no hasTrackDetails()"
-                    else: tt = cand.pseudoTrack()
+                        if cand.hasTrackDetails():
+                            tt = cand.pseudoTrack()
+                        elif debug:
+                            print "no hasTrackDetails()"
+                    else:
+                        tt = cand.pseudoTrack()
                     # if cand.pt()<=0.5 or tt.normalizedChi2()>=100. or
                     # tt.dxy(vertices[tau_vertex_idxpf].position())>=0.1 or
                     # cand.numberOfHits()<3:
 
                     # MB use candidate methods only
-                    if cand.pt() <= 0.5 or cand.dxy(vertices[tau_vertex_idxpf].position()) >= 0.1: continue
+                    if cand.pt() <= 0.5 or cand.dxy(vertices[tau_vertex_idxpf].position()) >= 0.1:
+                        continue
                     # if cand.pt()>0.95: #check this when possible (in MiniAOD 2016
                     # track information only above 0.95GeV, 0.5GeV for 2017)
                     # check this when possible (if at least one hit stored it means that track information is there, NB, we do not expect tracks with 0 hits!)
-                    if cand.numberOfHits() > 0 and (tt.normalizedChi2() >= 100. or cand.numberOfHits() < 3): continue
+                    if cand.numberOfHits() > 0 and (tt.normalizedChi2() >= 100. or cand.numberOfHits() < 3):
+                        continue
                     #dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
 
                     # MB use cand methods only
                     dz_tt = cand.dz(vertices[tau_vertex_idxpf].position())
                     if abs(dz_tt) < 0.2:
                         all_var_dict['tau_iso_dz02'].add(cand.pt())
-                        all_var_dict['tau_iso_puppi'].add(cand.pt() * cand.puppiWeight())
-                        all_var_dict['tau_iso_puppiNoL'].add(cand.pt() * cand.puppiWeightNoLep())
+                        all_var_dict['tau_iso_puppi'].add(
+                            cand.pt() * cand.puppiWeight())
+                        all_var_dict['tau_iso_puppiNoL'].add(
+                            cand.pt() * cand.puppiWeightNoLep())
 
                     if abs(dz_tt) < 0.015:
                         all_var_dict['tau_iso_dz001'].add(cand.pt())
@@ -532,13 +582,18 @@ if __name__ == '__main__':
                         all_var_dict['tau_iso_nopv'].add(cand.pt())
 
                 for cand in tau.isolationGammaCands():
-                    if abs(cand.charge()) > 0 or abs(cand.pdgId()) != 22: continue
-                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5: continue
-                    if cand.pt() <= 0.5: continue
+                    if abs(cand.charge()) > 0 or abs(cand.pdgId()) != 22:
+                        continue
+                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5:
+                        continue
+                    if cand.pt() <= 0.5:
+                        continue
 
                     all_var_dict['tau_iso_neu'].add(cand.pt())
-                    all_var_dict['tau_iso_puppi'].add(cand.pt() * cand.puppiWeight())
-                    all_var_dict['tau_iso_puppiNoL'].add(cand.pt() * cand.puppiWeightNoLep())
+                    all_var_dict['tau_iso_puppi'].add(
+                        cand.pt() * cand.puppiWeight())
+                    all_var_dict['tau_iso_puppiNoL'].add(
+                        cand.pt() * cand.puppiWeightNoLep())
 
                 all_var_dict['tau_dxy'].fill(tau.dxy())
                 all_var_dict['tau_dxy_err'].fill(tau.dxy_error())
@@ -548,100 +603,13 @@ if __name__ == '__main__':
                 all_var_dict['tau_ip3d_sig'].fill(tau.ip3d_Sig())
 
                 if tau.hasSecondaryVertex():
-                    all_var_dict['tau_flightLength'].fill(math.sqrt(tau.flightLength().mag2()))
-                    all_var_dict['tau_flightLength_sig'].fill(tau.flightLengthSig())
+                    all_var_dict['tau_flightLength'].fill(
+                        math.sqrt(tau.flightLength().mag2()))
+                    all_var_dict['tau_flightLength_sig'].fill(
+                        tau.flightLengthSig())
 
-                all_var_dict['tau_againstMuonLoose3'].fill(tau.tauID('againstMuonLoose3'))
-                all_var_dict['tau_againstMuonTight3'].fill(tau.tauID('againstMuonTight3'))
+                fill_tau_ids(all_var_dict, all_tau_ids)
 
-                all_var_dict['tau_byCombinedIsolationDeltaBetaCorrRaw3Hits'].fill(tau.tauID('byCombinedIsolationDeltaBetaCorrRaw3Hits'))
-                all_var_dict['tau_byLooseCombinedIsolationDeltaBetaCorr3Hits'].fill(tau.tauID('byLooseCombinedIsolationDeltaBetaCorr3Hits'))
-                all_var_dict['tau_byMediumCombinedIsolationDeltaBetaCorr3Hits'].fill(tau.tauID('byMediumCombinedIsolationDeltaBetaCorr3Hits'))
-                all_var_dict['tau_byTightCombinedIsolationDeltaBetaCorr3Hits'].fill(tau.tauID('byTightCombinedIsolationDeltaBetaCorr3Hits'))
-                all_var_dict['tau_chargedIsoPtSum'].fill(tau.tauID('chargedIsoPtSum'))
-                all_var_dict['tau_neutralIsoPtSum'].fill(tau.tauID('neutralIsoPtSum'))
-                all_var_dict['tau_puCorrPtSum'].fill(tau.tauID('puCorrPtSum'))
-
-                all_var_dict['tau_neutralIsoPtSumWeight'].fill(tau.tauID('neutralIsoPtSumWeight'))
-                all_var_dict['tau_footprintCorrection'].fill(tau.tauID('footprintCorrection'))
-                all_var_dict['tau_photonPtSumOutsideSignalCone'].fill(tau.tauID('photonPtSumOutsideSignalCone'))
-                all_var_dict['tau_decayModeFindingOldDMs'].fill(tau.tauID('decayModeFinding'))
-                all_var_dict['tau_decayModeFindingNewDMs'].fill(tau.tauID('decayModeFindingNewDMs'))
-
-                all_var_dict['tau_againstElectronVLooseMVA6'].fill(tau.tauID('againstElectronVLooseMVA6'))
-                all_var_dict['tau_againstElectronLooseMVA6'].fill(tau.tauID('againstElectronLooseMVA6'))
-                all_var_dict['tau_againstElectronMediumMVA6'].fill(tau.tauID('againstElectronMediumMVA6'))
-                all_var_dict['tau_againstElectronTightMVA6'].fill(tau.tauID('againstElectronTightMVA6'))
-                all_var_dict['tau_againstElectronVTightMVA6'].fill(tau.tauID('againstElectronVTightMVA6'))
-                all_var_dict['tau_againstElectronMVA6raw'].fill(tau.tauID('againstElectronMVA6Raw'))
-
-                all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBoldDMwLTraw'))
-                all_var_dict['tau_byLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byMediumIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVLooseIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBoldDMwLT'))
-                all_var_dict['tau_byVVTightIsolationMVArun2v1DBoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBoldDMwLT'))
-
-                all_var_dict['tau_byIsolationMVArun2v1PWoldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1PWoldDMwLTraw'))
-                all_var_dict['tau_byLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byMediumIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVLooseIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1PWoldDMwLT'))
-                all_var_dict['tau_byVVTightIsolationMVArun2v1PWoldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1PWoldDMwLT'))
-
-                all_var_dict['tau_byIsolationMVArun2v1DBdR03oldDMwLTraw'].fill(tau.tauID('byIsolationMVArun2v1DBdR03oldDMwLTraw'))
-                all_var_dict['tau_byLooseIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byLooseIsolationMVArun2v1DBdR03oldDMwLT'))
-                all_var_dict['tau_byMediumIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byMediumIsolationMVArun2v1DBdR03oldDMwLT'))
-                all_var_dict['tau_byTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byTightIsolationMVArun2v1DBdR03oldDMwLT'))
-                all_var_dict['tau_byVLooseIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVLooseIsolationMVArun2v1DBdR03oldDMwLT'))
-                all_var_dict['tau_byVTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVTightIsolationMVArun2v1DBdR03oldDMwLT'))
-                all_var_dict['tau_byVVTightIsolationMVArun2v1DBdR03oldDMwLT'].fill(tau.tauID('byVVTightIsolationMVArun2v1DBdR03oldDMwLT'))
-
-                if "2017v1" in mvaid:
-                    all_var_dict["tau_byIsolationMVArun2017v1DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v1DBoldDMwLTraw2017'))
-                    all_var_dict["tau_byVVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byVLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVLooseIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byLooseIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byMediumIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byMediumIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byTightIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byVTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVTightIsolationMVArun2017v1DBoldDMwLT2017'))
-                    all_var_dict["tau_byVVTightIsolationMVArun2017v1DBoldDMwLT2017"].fill(tau.tauID('byVVTightIsolationMVArun2017v1DBoldDMwLT2017'))
-                if "2017v2" in mvaid:
-                    all_var_dict["tau_byIsolationMVArun2017v2DBoldDMwLTraw2017"].fill(tau.tauID('byIsolationMVArun2017v2DBoldDMwLTraw2017'))
-                    all_var_dict["tau_byVVLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVVLooseIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byVLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVLooseIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byLooseIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byMediumIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byMediumIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byTightIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVTightIsolationMVArun2017v2DBoldDMwLT2017'))
-                    all_var_dict["tau_byVVTightIsolationMVArun2017v2DBoldDMwLT2017"].fill(tau.tauID('byVVTightIsolationMVArun2017v2DBoldDMwLT2017'))
-                if "2016v1" in mvaid:
-                    all_var_dict["tau_byIsolationMVArun2v1DBoldDMwLTraw2016"].fill(tau.tauID("byIsolationMVArun2v1DBoldDMwLTraw2016"))
-                    all_var_dict["tau_byVLooseIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVLooseIsolationMVArun2v1DBoldDMwLT2016"))
-                    all_var_dict["tau_byLooseIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byLooseIsolationMVArun2v1DBoldDMwLT2016"))
-                    all_var_dict["tau_byMediumIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byMediumIsolationMVArun2v1DBoldDMwLT2016"))
-                    all_var_dict["tau_byTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byTightIsolationMVArun2v1DBoldDMwLT2016"))
-                    all_var_dict["tau_byVTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVTightIsolationMVArun2v1DBoldDMwLT2016"))
-                    all_var_dict["tau_byVVTightIsolationMVArun2v1DBoldDMwLT2016"].fill(tau.tauID("byVVTightIsolationMVArun2v1DBoldDMwLT2016"))
-                if "newDM2016v1" in mvaid:
-                    all_var_dict["tau_byIsolationMVArun2v1DBnewDMwLTraw2016"].fill(tau.tauID("byIsolationMVArun2v1DBnewDMwLTraw2016"))
-                    all_var_dict["tau_byVLooseIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVLooseIsolationMVArun2v1DBnewDMwLT2016"))
-                    all_var_dict["tau_byLooseIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byLooseIsolationMVArun2v1DBnewDMwLT2016"))
-                    all_var_dict["tau_byMediumIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT2016"))
-                    all_var_dict["tau_byTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byTightIsolationMVArun2v1DBnewDMwLT2016"))
-                    all_var_dict["tau_byVTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVTightIsolationMVArun2v1DBnewDMwLT2016"))
-                    all_var_dict["tau_byVVTightIsolationMVArun2v1DBnewDMwLT2016"].fill(tau.tauID("byVVTightIsolationMVArun2v1DBnewDMwLT2016"))
-                if "dR0p32017v2" in mvaid:
-                    all_var_dict["tau_byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017"].fill(tau.tauID("byIsolationMVArun2017v2DBoldDMdR0p3wLTraw2017"))
-                    all_var_dict["tau_byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
-                    all_var_dict["tau_byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"].fill(tau.tauID("byVVTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017"))
                 if debug:
                     print 'Release ', RelVal, ': reading Run-2 MVA-based  discriminants'
                     print all_var_dict['tau_byIsolationMVArun2v1DBoldDMwLTraw']
@@ -655,5 +623,5 @@ if __name__ == '__main__':
     print "MATCHED TAUS:", NMatchedTaus
     print evtid, 'events are processed !'
 
-    file.Write()
-    file.Close()
+    out_file.Write()
+    out_file.Close()
