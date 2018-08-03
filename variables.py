@@ -10,7 +10,7 @@ vardict = {
     'againstElectronLooseMVA6': {'checkTree':[], 'var': 'tau_againstElectronLooseMVA6 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstElectronLooseMVA6'},
     'againstElectronMediumMVA6': {'checkTree':[], 'var': 'tau_againstElectronMediumMVA6 > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'againstElectronMediumMVA6'},
 
-    'oldDecayModeFinding': {'checkTree':[], 'var': 'tau_decayModeFindingOldDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'oldDecayModeFinding'},
+    'oldDecayModeFinding': {'checkTree':[], 'var': 'tau_decayModeFinding > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'oldDecayModeFinding'},
     'newDecayModeFinding': {'checkTree':[], 'var': 'tau_decayModeFindingNewDMs > 0.5', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'newDecayModeFinding'},
     #'oldDecayModeFindingModified':{'checkTree':[], 'var':'tau_decayModeFindingNewDMs > 0.5 && tau_dm != 5 && tau_dm != 6', 'nbin':2, 'min':-0.5, 'max':1.5, 'title':'oldDecayModeFinding w/ 3p+#pi^{0}'},
     'oldDecayModeFindingModified': {'checkTree':[], 'var': '(tau_decayModeFindingOldDMs > 0.5 || tau_dm == 11)', 'nbin': 2, 'min': -0.5, 'max': 1.5, 'title': 'oldDecayModeFinding w/ 3p+#pi^{0}'},
