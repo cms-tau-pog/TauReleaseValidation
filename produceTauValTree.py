@@ -9,19 +9,18 @@ import sys
 import os
 import copy
 import subprocess
-import numpy as num
+
+import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch, deltaR2
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from Var import Var
-from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample
 from tau_ids import all_tau_ids, lepton_tau_ids, tau_ids, fill_tau_ids
 
-import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True
-
 import argparse # needs to come after ROOT import
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample
 
 ROOT.gROOT.SetBatch(True)
 
@@ -44,8 +43,8 @@ def finalDaughters(gen, daughters=None):
 
 
 def visibleP4(gen):
-    final_ds = finalDaughters(gen)
-    return sum((d.p4() for d in final_ds if abs(d.pdgId()) not in [12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
+    gen.final_ds = finalDaughters(gen)
+    return sum((d.p4() for d in gen.final_ds if abs(d.pdgId()) not in [12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
 
 
 def removeOverlap(all_jets, gen_leptons, dR2=0.25):
@@ -167,10 +166,14 @@ if __name__ == '__main__':
         Var('tau_eta', float),
         Var('tau_phi', float),
         Var('tau_mass', float),
+        Var('tau_chargedpt', float),
+        Var('tau_neutralpt', float),
         Var('tau_gendm', int),
         Var('tau_genpt', float),
         Var('tau_geneta', float),
         Var('tau_genphi', float),
+        Var('tau_genchargedpt', float),
+        Var('tau_genneutralpt', float),
         Var('tau_vertex', int),
         Var('tau_nTruePU', float),
         Var('tau_nPU', int),
@@ -284,13 +287,13 @@ if __name__ == '__main__':
         refObjs = []
         if runtype in tau_run_types:
             for gen_tau in genTaus:
-                visP4 = visibleP4(gen_tau)
+                gen_tau.visP4 = visibleP4(gen_tau)
 
                 gen_dm = tauDecayModes.genDecayModeInt(
-                    [d for d in finalDaughters(gen_tau) if abs(d.pdgId()) not in [12, 14, 16]])
-                if abs(visP4.eta()) > 2.3:
+                    [d for d in gen_tau.final_ds if abs(d.pdgId()) not in [12, 14, 16]])
+                if abs(gen_tau.visP4.eta()) > 2.3:
                     continue
-                if visP4.pt() < 10:
+                if gen_tau.visP4.pt() < 10:
                     continue
                 if gen_dm == -11 or gen_dm == -13:
                     continue
@@ -333,13 +336,16 @@ if __name__ == '__main__':
                     break
 
             if runtype in tau_run_types:
-                visP4 = visibleP4(refObj)
                 gen_dm = tauDecayModes.genDecayModeInt(
                     [d for d in finalDaughters(refObj) if abs(d.pdgId()) not in [12, 14, 16]])
                 all_var_dict['tau_gendm'].fill(gen_dm)
-                all_var_dict['tau_genpt'].fill(visP4.pt())
-                all_var_dict['tau_geneta'].fill(visP4.eta())
-                all_var_dict['tau_genphi'].fill(visP4.phi())
+                all_var_dict['tau_genpt'].fill(refObj.visP4.pt())
+                all_var_dict['tau_geneta'].fill(refObj.visP4.eta())
+                all_var_dict['tau_genphi'].fill(refObj.visP4.phi())
+                charged_p4 = sum((d.p4() for d in refObj.final_ds if d.charge()), ROOT.math.XYZTLorentzVectorD())
+                neutral_p4 = sum((d.p4() for d in refObj.final_ds if abs(d.pdgId()) not in [12, 14, 16] and not d.charge()), ROOT.math.XYZTLorentzVectorD())
+                all_var_dict['tau_genchargedpt'].fill(charged_p4.pt())
+                all_var_dict['tau_genneutralpt'].fill(neutral_p4.pt())
             else:
                 all_var_dict['tau_gendm'].fill(-1)
                 all_var_dict['tau_genpt'].fill(refObj.pt())
@@ -356,6 +362,9 @@ if __name__ == '__main__':
                 all_var_dict['tau_eta'].fill(tau.eta())
                 all_var_dict['tau_phi'].fill(tau.phi())
                 all_var_dict['tau_mass'].fill(tau.mass())
+
+                all_var_dict['tau_chargedpt'].fill(sum((d.p4() for d in tau.signalChargedHadrCands()), ROOT.math.XYZTLorentzVectorD()).pt())
+                all_var_dict['tau_neutralpt'].fill(sum((d.p4() for d in tau.signalGammaCands()), ROOT.math.XYZTLorentzVectorD()).pt())
 
                 # Use candidate to vertex associaton as in MiniAOD
                 tau_vertex_idxpf = tau.leadChargedHadrCand().vertexRef().key()

@@ -36,8 +36,7 @@ def configureLegend(leg, ncolumn):
     leg.SetTextSize(0.02)
     leg.SetTextFont(42)
 
-def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerReleaseSuffix="", dryrun=False, debug=False):
-    if debug: print "\n\n\toverlay::len(hists)", len(hists)
+def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerReleaseSuffix=""):
     _eta = "_eta" * ("_eta" in header)
     directory1 = None
     directory2 = None
@@ -81,7 +80,7 @@ def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerRel
     leg = TLegend(0.2, 0.7, 0.5, 0.9)
     configureLegend(leg, 1)
 
-    for ii, hist in enumerate(hists):
+    for i_hist, hist in enumerate(hists):
 
         hist.GetYaxis().SetTitle('efficiency')
         hist.SetLineWidth(2)
@@ -89,22 +88,7 @@ def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerRel
         hist.SetMaximum(ymax * 1.4)
         hist.SetMinimum(ymin * 0.80)
         #hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
-        if ii == 0:
-            hist.Draw("Ap")
-            if debug:
-                print "\t\tAp", ii, hist.GetName(), hist.GetMarkerColor()
-                c1 = TCanvas()
-                hist.Draw("Ap")
-                save(c1, 'debug/compare_AP' + _eta + header)
-                canvas.cd()
-        else:
-            hist.Draw("psame")
-            if debug:
-                print "\t\tpsame", ii, hist.GetName(), hist.GetMarkerColor()
-                c1 = TCanvas()
-                hist.Draw("p")
-                save(c1, 'debug/compare_psame' + _eta + header)
-                canvas.cd()
+        hist.Draw('ap' if i_hist == 0 else 'psame')
 
         legname = hist.GetName()
         hist.GetPoint(0, x, y)
@@ -128,8 +112,6 @@ def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerRel
     tex2.SetTextSize(0.03)
     tex2.Draw()
 
-    if dryrun: return
-
     for key in directory1options:
         if key in header:
             directory1 = key + _eta
@@ -145,8 +127,7 @@ def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerRel
     save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/all' + _eta + '/' + header)
     if header=="byLooseIsolationMVArun2017v2DBoldDMwLT2017": exit()
 
-def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, comparePerReleaseSuffix="", dryrun=False, debug=False):
-    if debug: print "hoverlay::"
+def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, comparePerReleaseSuffix=""):
     c = TCanvas()
 
     # Upper plot will be in pad1
@@ -185,9 +166,6 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
 
         leg.AddEntry(ihist, ihist.GetName(), "l")
 
-    if dryrun:
-        if debug: print "dryrun"
-        return
     leg.Draw()
 
     xshift = 0.87
@@ -228,9 +206,7 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     c.cd()          # Go back to the main canvas
     save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
 
-def findLooseId(hname, debug=False):
-    if debug: print "findLooseId::"
-
+def findLooseId(hname):
     looseIdDict = {
         'tau_byLooseIsolationMVArun2v1DBoldDMwLT':  ['byLooseIsolationMVArun2v1DBoldDMwLT', 'byMediumIsolationMVArun2v1DBoldDMwLT', 'byTightIsolationMVArun2v1DBoldDMwLT'],
         'tau_byLooseIsolationMVArun2v1PWoldDMwLT': ['byLooseIsolationMVArun2v1PWoldDMwLT', 'byMediumIsolationMVArun2v1PWoldDMwLT', 'byTightIsolationMVArun2v1PWoldDMwLT'],
@@ -243,40 +219,26 @@ def findLooseId(hname, debug=False):
     }
     for key, value in looseIdDict.items():
         if hname in value:
-            if debug: print hname, 'in', value
             return key
 
     return 'tau_byLooseIsolationMVArun2v1DBoldDMwLT'
 
-def shiftAlongX(tGraph, numberOfGraphs, index, debug=False):
-    if debug: print "\tshiftAlongX::"
-
+def shiftAlongX(tGraph, numberOfGraphs, index):
     for binNumber in xrange(tGraph.GetN()):
         x = Double(-1)
         y = Double(-1)
         tGraph.GetPoint(binNumber, x, y)
         shift = (tGraph.GetErrorXhigh(binNumber)) / (numberOfGraphs + 1)
-        if debug:
-            print "\t\tBin", binNumber, 'shift =', "(", tGraph.GetErrorXhigh(binNumber), ") / (", numberOfGraphs, "+", 1, ") =", shift, "; x =", x, "=>", x + shift * index
         x = x + shift * index
         tGraph.SetPoint(binNumber, x, y)
 
-def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle='', header='', addon='', option='pt', marker=20, col=1, ptPlotsBinning = None, plotSeparateEff=False, debug=False):
-    if debug: print "\tmakeEffPlotsVars::", "header:", header, ";", "varx:", varx, ">>",
+def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle='', header='', addon='', option='pt', marker=20, col=1, ptPlotsBinning = None, plotSeparateEff=False):
 
     if ptPlotsBinning:
         _denomHist_  = TH1F( 'h_effp_' + addon,  'h_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
         _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
     else:
         raise ValueError("Wrong binning passed to makeEffPlotsVars with option == %s"%('eta'))
-
-    if debug:
-        print "\t\t", _denomHist_.GetName(), "; >>", _nominatorHist_.GetName()
-        print "\t\t", "varx:", varx
-        print "\t\t", "_denomHist_.GetName():", _denomHist_.GetName()
-        print "\t\t", "denom selection:", baseSelection
-        print "\t\t", "nom selection:", baseSelection + ' && ' + numeratorAddSelection
-
     tree.Draw(varx + ' >> ' + _denomHist_.GetName(),     baseSelection)
     tree.Draw(varx + ' >> ' + _nominatorHist_.GetName(), baseSelection + ' && ' + numeratorAddSelection)
 
@@ -311,9 +273,7 @@ def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle=''
     return g_efficiency
 
 
-def fillSampledic(globaltags, releases, runtype, inputfiles=[], debug=False):
-    if debug: print "Collecting samples"
-
+def fillSampledic(globaltags, releases, runtype, inputfiles=None):
     sampledict = {}
     styles = [
         {'col': 8, 'marker': 25, 'width': 2},
@@ -328,16 +288,11 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=[], debug=False):
     for index, globalTag in enumerate(globaltags):
         sampledict[globalTag] = styles[index]
 
-        if len(inputfiles) == 0:
+        if not inputfiles:
             sampledict[globalTag]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[index], globalTag, runtype))
         else:
             sampledict[globalTag]['file'] = TFile(inputfiles[index])
 
         sampledict[globalTag]['tree'] = sampledict[globalTag]['file'].Get('per_tau')
 
-    if debug:
-        print "sampledict:"
-        pp.pprint(sampledict)
-
     return sampledict
-
