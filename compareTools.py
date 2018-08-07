@@ -1,16 +1,14 @@
-import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True
-from ROOT import gROOT, gStyle, TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex
-
 import os
-
+import errno
 import pprint
+
+from ROOT import TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex, TMath
+
 pp = pprint.PrettyPrinter(indent=4)
 
-
 def ensureDir(file_path):
-    if '/' not in file_path: return
-    import errno
+    if '/' not in file_path:
+        return
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         try:
@@ -36,96 +34,62 @@ def configureLegend(leg, ncolumn):
     leg.SetTextSize(0.02)
     leg.SetTextFont(42)
 
-def overlay(hists, ytitle, header, addon, runtype, tlabel, xlabel, comparePerReleaseSuffix=""):
-    _eta = "_eta" * ("_eta" in header)
-    directory1 = None
-    directory2 = None
-    directory1options = ["byLooseCombinedIsolationDeltaBetaCorr3Hits",
-        "byMediumCombinedIsolationDeltaBetaCorr3Hits",
-        "byTightCombinedIsolationDeltaBetaCorr3Hits",
-        "byPtOutOfCone",
-        "byLooseChargedIsolation",
-        "byMediumChargedIsolation",
-        "byTightChargedIsolation",
-        "byLooseNeutralIsolation",
-        "byMediumNeutralIsolation",
-        "byTightNeutralIsolation",
-        "byLooseNeutralIsolationUnCorr",
-        "byMediumNeutralIsolationUnCorr",
-        "byTightNeutralIsolationUnCorr",
-        "byLooseIsolationMVArun2v1DBoldDMwLT",
-        "byMediumIsolationMVArun2v1DBoldDMwLT",
-        "byTightIsolationMVArun2v1DBoldDMwLT",
-        "againstElectron",
-        "againstMuon",
-        "DecayModeFinding",
-        'byLooseIsolationMVArun2017v2DBoldDMwLT2017',
-        'byMediumIsolationMVArun2017v2DBoldDMwLT2017',
-        'byTightIsolationMVArun2017v2DBoldDMwLT2017']
+def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
+    dir_translator = {"1p":"1prong", "2p":"2prong", "3p":"3prong", "modOldDM":"oldDM", "newDM":"newDM", "1ppi0":"1prongpizero", "3pold":"3prong_old"}
 
-    directory2options  = {"_1p": "1prong", "_2p": "2prong", "_3p": "3prong", "_modOldDM": "oldDM", "_newDM": "newDM"}
-    directory22options = {"_1ppi0": "1prongpizero", "_3pold": "3prong_old"}
-
-    ymax = -1
-    ymin = 100
-    for hist in hists:
-        for ip in xrange(hist.GetN()):
-            x = Double(-1)
-            y = Double(-1)
-            hist.GetPoint(ip, x, y)
-            if ymin > y: ymin = y
-            if ymax < y: ymax = y
+    ymin = min(TMath.MinElement(g.GetN(), g.GetY()) for g in graphs)
+    ymax = max(TMath.MaxElement(g.GetN(), g.GetY()) for g in graphs)
 
     canvas = TCanvas()
     leg = TLegend(0.2, 0.7, 0.5, 0.9)
     configureLegend(leg, 1)
 
-    for i_hist, hist in enumerate(hists):
+    for i_graph, graph in enumerate(graphs):
 
-        hist.GetYaxis().SetTitle('efficiency')
-        hist.SetLineWidth(2)
-        hist.SetMarkerSize(1)
-        hist.SetMaximum(ymax * 1.4)
-        hist.SetMinimum(ymin * 0.80)
+        graph.GetYaxis().SetTitle('efficiency')
+        graph.SetLineWidth(2)
+        graph.SetMarkerSize(1)
+        graph.SetMaximum(ymax * 1.4)
+        graph.SetMinimum(ymin * 0.80)
         #hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
-        hist.Draw('ap' if i_hist == 0 else 'psame')
+        graph.Draw('ap' if i_graph == 0 else 'psame')
 
-        legname = hist.GetName()
-        hist.GetPoint(0, x, y)
-        leg.AddEntry(hist, legname, 'lep')
+        legname = graph.GetName()
+        # graph.GetPoint(0, x, y)
+        leg.AddEntry(graph, legname, 'lep')
 
     leg.Draw()
-    # if header == "byLooseIsolationMVArun2017v2DBoldDMwLT2017": exit()
 
-    tex = TLatex(hists[-1].GetXaxis().GetXmin() + 0.01*(hists[-1].GetXaxis().GetXmax() - hists[-1].GetXaxis().GetXmin()), ymax*1.4, addon.replace('tau_', ''))
+    tex = TLatex(graphs[-1].GetXaxis().GetXmin() + 0.01*(graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax*1.4, addon.replace('tau_', ''))
     tex.SetTextAlign(10)
     tex.SetTextFont(42)
     tex.SetTextSize(0.03)
     tex.Draw()
 
     xshift = 0.87
-    if tlabel.find('QCD') != -1:       xshift = 0.6
-    if runtype.find('TTbarTau') != -1: xshift = 0.78
-    tex2 = TLatex(hists[-1].GetXaxis().GetXmin() + xshift*(hists[-1].GetXaxis().GetXmax() - hists[-1].GetXaxis().GetXmin()), ymax*1.4, tlabel)
+    if tlabel.find('QCD') != -1:
+        xshift = 0.6
+    if runtype.find('TTbarTau') != -1:
+        xshift = 0.78
+    tex2 = TLatex(graphs[-1].GetXaxis().GetXmin() + xshift*(graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax*1.4, tlabel)
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
     tex2.SetTextSize(0.03)
     tex2.Draw()
 
-    for key in directory1options:
-        if key in header:
-            directory1 = key + _eta
-            save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory1 + '/' + header)
+    eta = '_eta' if '_eta' in header else ''
 
-    for key, value in directory2options.items() + directory22options.items():
-        if key in header:
-            directory2 = value + _eta
-            save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory2 + '/' + header)
+    dir_name = header.split('_')[0] + eta
+    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + dir_name + '/' + header)
 
-    if not (directory1 or directory2): save(canvas, 'compare_' + runtype + '/' + header)
+    try:
+        directory2 = dir_translator[header.split('_')[1]]
+        save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory2 + '/' + header)
+    except (IndexError, KeyError):
+        pass
 
-    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/all' + _eta + '/' + header)
-    if header=="byLooseIsolationMVArun2017v2DBoldDMwLT2017": exit()
+    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/all' + eta + '/' + header)
+
 
 def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, comparePerReleaseSuffix=""):
     c = TCanvas()
@@ -136,35 +100,38 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     pad1.Draw()             # Draw the upper pad: pad1
     pad1.cd()              # pad1 becomes the current pad
     pad1.SetLogy(0)
-    if any(subname in name for subname in ['isoPt', 'outOfConePt', 'IsoRaw']): pad1.SetLogy()
+    if any(subname in name for subname in ['isoPt', 'outOfConePt', 'IsoRaw']):
+        pad1.SetLogy()
 
     ymax = max([hist.GetMaximum() for hist in hists])
     leg = TLegend(0.2, 0.65, 0.91, 0.9)
     configureLegend(leg, 1)
 
     hratios = []
-    for ii, ihist in enumerate(hists):
-        ihist.SetMaximum(ymax * 1.2)
-        ihist.SetMinimum(0.)
+    for i_hist, hist in enumerate(hists):
+        hist.SetMaximum(ymax * 1.2)
+        hist.SetMinimum(0.)
         # if c.GetLogy > 0:
-        if pad1.GetLogy > 0: ihist.SetMinimum(0.001)
-        ihist.SetMarkerSize(0.)
-        ihist.GetXaxis().SetTitle(xtitle)
-        ihist.GetYaxis().SetTitle(ytitle)
+        if pad1.GetLogy > 0:
+            hist.SetMinimum(0.001)
+        hist.SetMarkerSize(0.)
+        hist.GetXaxis().SetTitle(xtitle)
+        hist.GetYaxis().SetTitle(ytitle)
 
-        if ii == 0: ihist.Draw('h')
+        if i_hist == 0:
+            hist.Draw('h')
         else:
-            ihist.Draw('hsame')
-            ihr = ihist.Clone()
+            hist.Draw('hsame')
+            ihr = hist.Clone()
             # ihr.Sumw2()
             ihr.Divide(hists[0])
             ihr.SetStats(0)
-            ihr.SetLineColor(ihist.GetLineColor())
-            ihr.SetMarkerColor(ihist.GetMarkerColor())
+            ihr.SetLineColor(hist.GetLineColor())
+            ihr.SetMarkerColor(hist.GetMarkerColor())
             ihr.SetMarkerStyle(hist.GetMarkerStyle())
             hratios.append(ihr)
 
-        leg.AddEntry(ihist, ihist.GetName(), "l")
+        leg.AddEntry(hist, hist.GetName(), "l")
 
     leg.Draw()
 
@@ -189,19 +156,19 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     pad2.SetBottomMargin(0.25)
     pad2.Draw()
     pad2.cd()
-    for ii, ihist in enumerate(hratios):
-        ihist.GetYaxis().SetTitle('ratio')
-        ihist.SetMinimum(0.75)
-        ihist.SetMaximum(1.25)
-        ihist.GetYaxis().SetTitleOffset(0.33)
-        ihist.GetYaxis().SetTitleSize(0.193)
-        ihist.GetYaxis().SetLabelSize(0.175)
-        ihist.GetXaxis().SetTitleSize(0.193)
-        ihist.GetXaxis().SetLabelSize(0.175)
+    for ii, hist in enumerate(hratios):
+        hist.GetYaxis().SetTitle('ratio')
+        hist.SetMinimum(0.75)
+        hist.SetMaximum(1.25)
+        hist.GetYaxis().SetTitleOffset(0.33)
+        hist.GetYaxis().SetTitleSize(0.193)
+        hist.GetYaxis().SetLabelSize(0.175)
+        hist.GetXaxis().SetTitleSize(0.193)
+        hist.GetXaxis().SetLabelSize(0.175)
         if ii == 0:
-            ihist.Draw('ep')
+            hist.Draw('ep')
         else:
-            ihist.Draw('epsame')
+            hist.Draw('epsame')
 
     c.cd()          # Go back to the main canvas
     save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
@@ -232,45 +199,30 @@ def shiftAlongX(tGraph, numberOfGraphs, index):
         x = x + shift * index
         tGraph.SetPoint(binNumber, x, y)
 
-def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, xtitle='', header='', addon='', option='pt', marker=20, col=1, ptPlotsBinning = None, plotSeparateEff=False):
+def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, binning, xtitle='', header='', addon='', marker=20, col=1):
 
-    if ptPlotsBinning:
-        _denomHist_  = TH1F( 'h_effp_' + addon,  'h_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
-        _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon, len(ptPlotsBinning) - 1, ptPlotsBinning)
-    else:
-        raise ValueError("Wrong binning passed to makeEffPlotsVars with option == %s"%('eta'))
-    tree.Draw(varx + ' >> ' + _denomHist_.GetName(),     baseSelection)
+    _denomHist_ = TH1F('h_effp_' + addon, 'h_effp' + addon, len(binning) - 1, binning)
+    _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon, len(binning) - 1, binning)
+
+    tree.Draw(varx + ' >> ' + _denomHist_.GetName(), baseSelection)
     tree.Draw(varx + ' >> ' + _nominatorHist_.GetName(), baseSelection + ' && ' + numeratorAddSelection)
 
-    g_efficiency = TGraphAsymmErrors()
-    g_efficiency.Divide(_nominatorHist_, _denomHist_, "cl=0.683 b(1,1) mode")
-    g_efficiency.GetXaxis().SetTitle(xtitle)
-    g_efficiency.GetYaxis().SetTitle('efficiency')
-    g_efficiency.GetYaxis().SetNdivisions(507)
-    g_efficiency.SetLineWidth(3)
-    if "loose_id_17v2" not in header and "loose_id" in header: g_efficiency.SetLineWidth(5)
-    g_efficiency.SetName(header)
-    g_efficiency.SetMinimum(0.)
-    g_efficiency.GetYaxis().SetTitleOffset(1.3)
-    g_efficiency.SetMarkerStyle(marker)
-    g_efficiency.SetMarkerSize(1)
-    if "loose_id_17v2" not in header and "loose_id" in header: g_efficiency.SetMarkerSize(3)
-    g_efficiency.SetMarkerColor(col)
-    g_efficiency.SetLineColor(col)
-    g_efficiency.Draw('ap')
+    g_eff = TGraphAsymmErrors()
+    g_eff.Divide(_nominatorHist_, _denomHist_, "cl=0.683 b(1,1) mode")
+    g_eff.GetXaxis().SetTitle(xtitle)
+    g_eff.GetYaxis().SetTitle('efficiency')
+    g_eff.GetYaxis().SetNdivisions(507)
+    g_eff.SetLineWidth(3)
+    g_eff.SetName(header)
+    g_eff.SetMinimum(0.)
+    g_eff.GetYaxis().SetTitleOffset(1.3)
+    g_eff.SetMarkerStyle(marker)
+    g_eff.SetMarkerSize(1)
+    g_eff.SetMarkerColor(col)
+    g_eff.SetLineColor(col)
+    g_eff.Draw('ap')
 
-    if plotSeparateEff:
-        canvas = TCanvas()
-        leg = TLegend(0.2, 0.7, 0.5, 0.9)
-        configureLegend(leg, 1)
-        legname = g_efficiency.GetName()
-        hist.GetPoint(0, x, y)
-        leg.AddEntry(hist, legname, 'lep')
-        leg.Draw()
-        g_efficiency.Draw()
-        save(canvas, "plots/makeEffPlotsVars/" + addon)
-
-    return g_efficiency
+    return g_eff
 
 
 def fillSampledic(globaltags, releases, runtype, inputfiles=None):

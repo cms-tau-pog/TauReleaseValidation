@@ -43,12 +43,12 @@ def is_number(s):
     return True
 
 def word_finder(expr):
-    words = re.compile('\w+').findall(expr)
+    words = re.compile(r'\w+').findall(expr)
     return [w for w in words if not is_number(w) and w not in ['min', 'max']]
 
 def efficiency_plots(d_sample, var_name, hdict):
-    hists = []
-    histseta = []
+    graphs = []
+    graphs_eta = []
 
     for rel, rdict in d_sample.items():
         tree = rdict['tree']
@@ -66,46 +66,40 @@ def efficiency_plots(d_sample, var_name, hdict):
             den_sel = reco_cut + ' && ' + loose_id
 
         for mvaIDname, sel in discriminators.items():
-            hists.append(makeEffPlotsVars(tree=tree,
-                                          varx='tau_genpt',
-                                          numeratorAddSelection=num_sel +
-                                          '&&' + hdict['var'],
-                                          baseSelection=sel +
-                                          '&& abs(tau_eta) < 2.3',
-                                          xtitle=options_dict[runtype].xlabel,
-                                          header=rel + mvaIDname, addon=rel + mvaIDname,
-                                          option='pt',
-                                          marker=rdict['marker'],
-                                          col=rdict['col'],
-                                          ptPlotsBinning=ptPlotsBinning)
-                        )
+            graphs.append(makeEffPlotsVars(tree=tree,
+                                           varx='tau_genpt',
+                                           numeratorAddSelection=num_sel +
+                                           '&&' + hdict['var'],
+                                           baseSelection=sel +
+                                           '&& abs(tau_eta) < 2.3',
+                                           binning=ptPlotsBinning,
+                                           xtitle=options_dict[runtype].xlabel,
+                                           header=rel + mvaIDname, addon=rel + mvaIDname,
+                                           marker=rdict['marker'],
+                                           col=rdict['col']))
 
-            histseta.append(makeEffPlotsVars(tree=tree,
-                                             varx='tau_geneta',
-                                             numeratorAddSelection=num_sel +
-                                             '&&' + hdict['var'],
-                                             baseSelection=sel + '&& tau_pt>20',
-                                             xtitle=options_dict[runtype].xlabel_eta,
-                                             header=rel + mvaIDname, addon=rel + mvaIDname,
-                                             option='eta',
-                                             marker=rdict['marker'],
-                                             col=rdict['col'],
-                                             ptPlotsBinning=etaPlotsBinning)
-                           )
+            graphs_eta.append(makeEffPlotsVars(tree=tree,
+                                               varx='tau_geneta',
+                                               numeratorAddSelection=num_sel +
+                                               '&&' + hdict['var'],
+                                               baseSelection=sel + '&& tau_pt>20',
+                                               binning=etaPlotsBinning,
+                                               xtitle=options_dict[runtype].xlabel_eta,
+                                               header=rel + mvaIDname, addon=rel + mvaIDname,
+                                               marker=rdict['marker'],
+                                               col=rdict['col']))
 
-    overlay(hists=hists, ytitle=var_name,
+    overlay(graphs=graphs,
             header=var_name,
             addon=hdict['title'],
             runtype=runtype,
-            tlabel=options_dict[runtype].tlabel,
-            xlabel=options_dict[runtype].xlabel)
+            tlabel=options_dict[runtype].tlabel)
 
-    overlay(hists=histseta, ytitle=var_name,
+    overlay(graphs=graphs_eta,
             header=var_name + '_eta',
             addon=hdict['title'] + '_eta',
             runtype=runtype,
-            tlabel=options_dict[runtype].tlabel,
-            xlabel=options_dict[runtype].xlabel)
+            tlabel=options_dict[runtype].tlabel)
 
 def eff_plots_single(d_sample, vars_to_compare, var_dict):
     '''Adapted from Olena's code - can possibly merge it with efficiency_plots
@@ -144,46 +138,39 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
                                               varx='tau_genpt',
                                               numeratorAddSelection=num_sel + '&&' + hdict['var'],
                                               baseSelection=sel + '&& abs(tau_eta) < 2.3',
+                                              binning=ptPlotsBinning,
                                               xtitle=options_dict[runtype].xlabel,
                                               header=var_name + mvaIDname, addon=var_name + mvaIDname,
-                                              option='pt',
                                               marker=rdict['marker'],
-                                              col=int(colors[index]),
-                                              ptPlotsBinning=ptPlotsBinning,
-                                              plotSeparateEff=False)
-                )
+                                              col=int(colors[index])))
 
                 shiftAlongX(hists[-1], len(vars_to_compare), index)
 
                 histseta.append(makeEffPlotsVars(tree=tree,
-                    varx='tau_geneta',
-                    numeratorAddSelection=num_sel + '&&' + hdict['var'],
-                    baseSelection=sel + '&& tau_pt>20',
-                    xtitle=options_dict[runtype].xlabel_eta,
-                    header=var_name + mvaIDname, addon=var_name + mvaIDname,
-                    option='eta',
-                    marker=rdict['marker'],
-                    col=int(colors[index]),
-                    ptPlotsBinning=etaPlotsBinning,
-                    plotSeparateEff=False)
-                )
+                                                 varx='tau_geneta',
+                                                 numeratorAddSelection=num_sel + '&&' + hdict['var'],
+                                                 baseSelection=sel + '&& tau_pt>20',
+                                                 binning=etaPlotsBinning,
+                                                 xtitle=options_dict[runtype].xlabel_eta,
+                                                 header=var_name + mvaIDname, addon=var_name + mvaIDname,
+                                                 marker=rdict['marker'],
+                                                 col=int(colors[index])))
+
                 shiftAlongX(histseta[-1], len(vars_to_compare), index)
 
-    overlay(hists=hists, ytitle=vars_to_compare[0],
-        header=vars_to_compare[0],
-        addon=hdict['title'],
-        runtype=runtype,
-        tlabel=options_dict[runtype].tlabel,
-        xlabel=options_dict[runtype].xlabel,
-        comparePerReleaseSuffix = "_comparePerRelease")
+    overlay(graphs=hists,
+            header=vars_to_compare[0],
+            addon=hdict['title'],
+            runtype=runtype,
+            tlabel=options_dict[runtype].tlabel,
+            comparePerReleaseSuffix="_comparePerRelease")
 
-    overlay(hists=histseta, ytitle=vars_to_compare[0],
-        header=vars_to_compare[0] + '_eta',
-        addon=hdict['title'] + '_eta',
-        runtype=runtype,
-        tlabel=options_dict[runtype].tlabel,
-        xlabel=options_dict[runtype].xlabel,
-        comparePerReleaseSuffix = "_comparePerRelease")
+    overlay(graphs=histseta,
+            header=vars_to_compare[0] + '_eta',
+            addon=hdict['title'] + '_eta',
+            runtype=runtype,
+            tlabel=options_dict[runtype].tlabel,
+            comparePerReleaseSuffix="_comparePerRelease")
 
 def var_plots(d_sample, var_name, hdict):
     hists = []
