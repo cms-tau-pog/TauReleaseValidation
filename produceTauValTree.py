@@ -79,7 +79,7 @@ if __name__ == '__main__':
     no_anti_lepton = args.noAntiLepton
     if len(localdir) > 1 and localdir[-1] != "/":
         localdir += "/"
-    inputfile = args.inputfile
+    inputfiles = args.inputfiles
 
     runtype = args.runtype
 
@@ -91,8 +91,8 @@ if __name__ == '__main__':
 
     filelist = []
 
-    if inputfile != "":
-        filelist = [inputfile]
+    if inputfiles:
+        filelist = inputfiles
     else:
         path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(
             RelVal, runtype_to_sample[runtype], globalTag)

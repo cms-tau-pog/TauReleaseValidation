@@ -8,10 +8,13 @@ import eostools
 def addArguments(parser, compare=False):
     # for all, including produceTauValTree.py
     parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
+    parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
 
     # Only for produceTauValTree.py
     if not compare:
         parser.add_argument('-n', '--maxEvents', default=-1, type=int, help='Number of events that will be analyzed (-1 = all events) [Default: %(default)s]')
+        parser.add_argument('-r', '--release', default="CMSSW_9_4_0_pre1", help='Release')
+        parser.add_argument('-g', '--globalTag', default='93X_mc2017_realistic_v3-v1', help='Global tag [Default: %(default)s]')
         parser.add_argument('-u', '--useRecoJets', default=False, action="store_true", help='Use RecoJets [Default: %(default)s]')
         parser.add_argument('-s', '--storageSite', default='eos', choices=['eos', 'das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
         parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")
@@ -28,7 +31,6 @@ def addArguments(parser, compare=False):
         parser.add_argument('-b', '--onebin', default=False, action="store_true", help='Plot inclusive efficiencies by only using one bin')
         parser.add_argument('-r', '--releases', default=["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"], nargs='*', help='List of releases')
         parser.add_argument('-g', '--globalTags', default=['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1'], nargs='*', help='List of global tags [Default: %(default)s]')
-        parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
 
         parser.add_argument('-v', '--variables', default=[], nargs='*', help='Variables to place on a single plot (if only one release+GT)')
         parser.add_argument('-c', '--colors', default=[1, 4], nargs='*', help='Colors of variables to place on a single plot (if only one release+GT)')
