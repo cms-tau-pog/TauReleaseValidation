@@ -30,7 +30,6 @@ if __name__ == '__main__':
     localdir = args.localdir
     if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
 
-    mvaid = 
     mvaidstr = " --mvaid " + ' '.join(args.mvaid)
 
     scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]

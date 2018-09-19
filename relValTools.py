@@ -8,23 +8,27 @@ import eostools
 def addArguments(parser, compare=False):
     # for all, including produceTauValTree.py
     parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
+    parser.add_argument('-u', '--useRecoJets', default=False, action="store_true", help='Use RecoJets [Default: %(default)s]')#
     parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
+    parser.add_argument('-s', '--storageSite', default='eos', choices=['eos', 'das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
+    parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")#
+    parser.add_argument('-m', '--mvaid', default=[], nargs='*',#
+                        help="Select mvaids that should be obtained via rerunning TAUId sequence: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
+    parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. Possible: NewTauIDsEmbedded; [Default: %(default)s].")#
+    parser.add_argument('-o', '--outputFileName', default='', help="Output file name [Default: %(default)s]")
+
+    # useful for debugging
+    parser.add_argument('-n', '--maxEvents', default=-1, type=int, help='Number of events that will be analyzed (-1 = all events) [Default: %(default)s]')#
+    parser.add_argument('--debug', default=False, help="Debug option [Default: %(default)s]", action="store_true")
+    parser.add_argument('--dryRun', default=False, action="store_true",  help='Dry run - no plots [Default: %(default)s]')
 
     # Only for produceTauValTree.py
     if not compare:
-        parser.add_argument('-n', '--maxEvents', default=-1, type=int, help='Number of events that will be analyzed (-1 = all events) [Default: %(default)s]')
         parser.add_argument('-r', '--release', default="CMSSW_9_4_0_pre1", help='Release')
         parser.add_argument('-g', '--globalTag', default='93X_mc2017_realistic_v3-v1', help='Global tag [Default: %(default)s]')
-        parser.add_argument('-u', '--useRecoJets', default=False, action="store_true", help='Use RecoJets [Default: %(default)s]')
-        parser.add_argument('-s', '--storageSite', default='eos', choices=['eos', 'das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
-        parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")
-        parser.add_argument('-m', '--mvaid', default=[], nargs='*',
-                            help="Select mvaids that should be obtained via rerunning TAUId sequence: [2017v1, 2017v2, newDM2017v2, dR0p32017v2, 2016v1, newDM2016v1]. [Default: %(default)s]")
         parser.add_argument('--noAntiLepton', default=False, action='store_true', help='Do not access anti-lepton discriminators, e.g. if you use the tau reconstruction on top of MiniAOD that does not calculate them')
-        parser.add_argument('-t', '--tauCollection', default='slimmedTaus', help="Tau collection to be used. Possible: NewTauIDsEmbedded; [Default: %(default)s].")
-        parser.add_argument('-o', '--outputFileName', default='', help="Output file name [Default: %(default)s]")
 
-    if compare:
+    elif compare:
         parser.add_argument('-p', '--part', default=0, type=int, help='Make WP plots(1), first half of histogram plots(2), \
             second half of histogram plots(3), or everything at once(0) \
             (This part needs to be split up to avoid a crash that happens for some reason)')
