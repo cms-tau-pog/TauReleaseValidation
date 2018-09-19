@@ -18,7 +18,7 @@ from compareTools import overlay, hoverlay, makeEffPlotsVars, fillSampledic, fin
 from ROOT import gROOT, gStyle, TH1F
 
 import argparse
-from relValTools import addArguments
+from relValTools import addArguments, dprint
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
@@ -135,7 +135,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
                 den_sel = reco_cut + ' && ' + loose_id
 
             for mvaIDname, sel in discriminators.items():
-                print "\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var']
+                dprint("\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var'])
 
                 hists.append(makeEffPlotsVars(tree=tree,
                                               varx='tau_genpt',

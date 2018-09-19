@@ -23,6 +23,7 @@ if __name__ == '__main__':
     tauCollection = args.tauCollection
     onebin = args.onebin
     debug = args.debug
+    globaldebug = args.debug
     dryRun = args.dryRun
     inputfiles = args.inputfiles
     outputFileName = args.outputFileName

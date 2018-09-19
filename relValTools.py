@@ -4,6 +4,7 @@ import subprocess
 
 import eostools
 
+globaldebug = False
 
 runtype_to_sample = {
     'ZTT': 'RelValZTT_13',
@@ -49,6 +50,23 @@ def addArguments(parser, produce=True, compare=False):
         parser.add_argument('-c', '--colors', default=[1, 4], nargs='*', help='Colors of variables to place on a single plot (if only one release+GT)')
         parser.add_argument('--varyLooseId', default=False, action="store_true", help='If the loose Id should be varied')
         parser.add_argument('--setLooseId', default='tau_byLooseIsolationMVArun2v1DBoldDMwLT', help='LooseId to be considered')
+
+
+def dprint(*text):
+    if globaldebug and text is not None:
+        for t in text:
+            print t,
+        print
+        # print " ".join(map(str, text))
+
+
+def dpprint(*text):
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    if globaldebug and text is not None:
+        for t in text:
+            pp.pprint(t)
+        # pp.pprint(" \n".join(map(str, text)))
 
 
 def getFilesFromEOS(path, cmseospath=True):

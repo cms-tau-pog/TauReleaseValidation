@@ -19,8 +19,8 @@ from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from Var import Var
 from tau_ids import all_tau_ids, lepton_tau_ids, tau_ids, fill_tau_ids
 
-import argparse # needs to come after ROOT import
-from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample
+import argparse  # needs to come after ROOT import
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample, dprint
 
 ROOT.gROOT.SetBatch(True)
 
@@ -70,6 +70,8 @@ if __name__ == '__main__':
     addArguments(parser, produce=True, compare=False)
     args = parser.parse_args()
 
+    runtype = args.runtype
+    globaldebug = args.debug
     maxEvents = args.maxEvents
     RelVal = args.release
     globalTag = args.globalTag
@@ -83,13 +85,11 @@ if __name__ == '__main__':
         localdir += "/"
     inputfiles = args.inputfiles
 
-    runtype = args.runtype
-
-    print 'Running with'
-    print 'runtype', runtype
-    print 'RelVal', RelVal
-    print 'globalTag', globalTag
-    print 'storageSite', storageSite
+    dprint('Running with')
+    dprint('runtype', runtype)
+    dprint('RelVal', RelVal)
+    dprint('globalTag', globalTag)
+    dprint('storageSite', storageSite)
 
     filelist = []
 
