@@ -16,7 +16,7 @@ runtype_to_sample = {
 }
 
 
-def addArguments(parser, compare=False):
+def addArguments(parser, produce=True, compare=False):
     # for all, including produceTauValTree.py
     parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
     parser.add_argument('-u', '--useRecoJets', default=False, action="store_true", help='Use RecoJets [Default: %(default)s]')#

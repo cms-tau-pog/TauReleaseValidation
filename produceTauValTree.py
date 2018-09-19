@@ -65,7 +65,7 @@ def isGenLepton(lep_cand, pid):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser, compare=False)
+    addArguments(parser, produce=True, compare=False)
     args = parser.parse_args()
 
     maxEvents = args.maxEvents

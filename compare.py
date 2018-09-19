@@ -212,7 +212,7 @@ def var_plots(d_sample, var_name, hdict):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser, compare=True)
+    addArguments(parser, produce=False, compare=True)
     args = parser.parse_args()
     part = args.part
     inputfiles = args.inputfiles
