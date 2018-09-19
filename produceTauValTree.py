@@ -19,15 +19,16 @@ from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from Var import Var
 from tau_ids import all_tau_ids, lepton_tau_ids, tau_ids, fill_tau_ids
 
-import argparse # needs to come after ROOT import
-from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample
+import argparse  # needs to come after ROOT import
+from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample, dprint
 
 ROOT.gROOT.SetBatch(True)
 
 tau_run_types = ['ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
 jet_run_types = ['QCD', 'TTbar']
-fill_pf_cands = False # Slows down processing
-fill_lost_cands = False # Slows down processing
+fill_pf_cands = False  # Slows down processing
+fill_lost_cands = False  # Slows down processing
+
 
 def finalDaughters(gen, daughters=None):
     if daughters is None:
@@ -55,19 +56,22 @@ def removeOverlap(all_jets, gen_leptons, dR2=0.25):
 
     return non_tau_jets
 
+
 def isGenLepton(lep_cand, pid):
-    return (abs(lep_cand.pdgId()) == pid
-            and lep_cand.status() == 1
-            and (lep_cand.isPromptFinalState() or lep_cand.isDirectPromptTauDecayProductFinalState())
-            and lep_cand.pt() > 20
-            and abs(lep_cand.eta()) < 2.3)
+    return (abs(lep_cand.pdgId()) == pid and
+            lep_cand.status() == 1 and
+            (lep_cand.isPromptFinalState() or lep_cand.isDirectPromptTauDecayProductFinalState()) and
+            lep_cand.pt() > 20 and
+            abs(lep_cand.eta()) < 2.3)
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser, compare=False)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    addArguments(parser, produce=True, compare=False)
     args = parser.parse_args()
 
+    runtype = args.runtype
+    globaldebug = args.debug
     maxEvents = args.maxEvents
     RelVal = args.release
     globalTag = args.globalTag
@@ -81,21 +85,18 @@ if __name__ == '__main__':
         localdir += "/"
     inputfiles = args.inputfiles
 
-    runtype = args.runtype
-
-    print 'Running with'
-    print 'runtype', runtype
-    print 'RelVal', RelVal
-    print 'globalTag', globalTag
-    print 'storageSite', storageSite
+    dprint('Running with')
+    dprint('runtype', runtype)
+    dprint('RelVal', RelVal)
+    dprint('globalTag', globalTag)
+    dprint('storageSite', storageSite)
 
     filelist = []
 
     if inputfiles:
         filelist = inputfiles
     else:
-        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(
-            RelVal, runtype_to_sample[runtype], globalTag)
+        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
 
         if storageSite == "eos":
             filelist = getFilesFromEOS(path)
@@ -203,14 +204,13 @@ if __name__ == '__main__':
         all_tau_ids += tau_ids[mva_id]
 
     for (tau_id, v_type) in all_tau_ids:
-        all_vars.append(Var('tau_'+tau_id, v_type))
-
+        all_vars.append(Var('tau_' + tau_id, v_type))
 
     all_var_dict = {var.name: var for var in all_vars}
 
     for var in all_vars:
         tau_tree.Branch(var.name, var.storage, var.name +
-                        '/'+('I' if var.type == int else 'D'))
+                        '/' + ('I' if var.type == int else 'D'))
 
     evtid = 0
 
@@ -271,8 +271,6 @@ if __name__ == '__main__':
         genTaus = [p for p in genParticles if abs(
             p.pdgId()) == 15 and p.isPromptDecayed()]
 
-
-
         genElectrons = [
             p for p in genParticles if isGenLepton(p, 11)]
         genMuons = [
@@ -280,9 +278,9 @@ if __name__ == '__main__':
 
         # gen leptons to clean jets with respect to them (e.g. for TTBar)
         genLeptons = [p for p in genParticles if
-                      p.status() == 1 and p.pt() > 15
-                      and (((abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState())
-                           or (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
+                      p.status() == 1 and p.pt() > 15 and
+                      (((abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) or
+                        (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
 
         refObjs = []
         if runtype in tau_run_types:
@@ -411,7 +409,7 @@ if __name__ == '__main__':
                         continue
                     if cand.numberOfHits() > 0 and (cand_track.normalizedChi2() >= 100. or cand.numberOfHits() < 3):
                         continue
-                    #dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
+                    # dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
 
                     # MB use cand methods only
                     dz_tt = cand.dz(vertices[tau_vertex_idxpf].position())

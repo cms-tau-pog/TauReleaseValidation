@@ -10,7 +10,7 @@ from collections import namedtuple
 
 # The following needs to come before any other ROOT import and before argparse
 import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True 
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 from officialStyle import officialStyle
 from variables import vardict, hvardict
 from compareTools import overlay, hoverlay, makeEffPlotsVars, fillSampledic, findLooseId, shiftAlongX
@@ -18,7 +18,7 @@ from compareTools import overlay, hoverlay, makeEffPlotsVars, fillSampledic, fin
 from ROOT import gROOT, gStyle, TH1F
 
 import argparse
-from relValTools import addArguments
+from relValTools import addArguments, dprint
 
 gROOT.SetBatch(True)
 officialStyle(gStyle)
@@ -26,14 +26,15 @@ gStyle.SetOptTitle(0)
 
 RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
 options_dict = {
-    'ZTT':RuntypeOptions(tlabel='Z #rightarrow #tau#tau', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
-    'ZEE':RuntypeOptions(tlabel='Z #rightarrow ee', xlabel='electron p_{T} (GeV)', xlabel_eta='electron #eta'),
-    'ZMM':RuntypeOptions(tlabel='Z #rightarrow #mu#mu', xlabel='muon p_{T} (GeV)', xlabel_eta='muon #eta'),
-    'QCD':RuntypeOptions(tlabel='QCD, flat #hat{p}_{T} 15-3000GeV', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
-    'TTbar':RuntypeOptions(tlabel='TTbar', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
-    'TTbarTau':RuntypeOptions(tlabel='TTbar #rightarrow #tau+X', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
-    'TenTaus':RuntypeOptions(tlabel='Ten taus', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
+    'ZTT': RuntypeOptions(tlabel='Z #rightarrow #tau#tau', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
+    'ZEE': RuntypeOptions(tlabel='Z #rightarrow ee', xlabel='electron p_{T} (GeV)', xlabel_eta='electron #eta'),
+    'ZMM': RuntypeOptions(tlabel='Z #rightarrow #mu#mu', xlabel='muon p_{T} (GeV)', xlabel_eta='muon #eta'),
+    'QCD': RuntypeOptions(tlabel='QCD, flat #hat{p}_{T} 15-3000GeV', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
+    'TTbar': RuntypeOptions(tlabel='TTbar', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
+    'TTbarTau': RuntypeOptions(tlabel='TTbar #rightarrow #tau+X', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
+    'TenTaus': RuntypeOptions(tlabel='Ten taus', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
 }
+
 
 def is_number(s):
     try:
@@ -42,9 +43,11 @@ def is_number(s):
         return False
     return True
 
+
 def word_finder(expr):
     words = re.compile(r'\w+').findall(expr)
     return [w for w in words if not is_number(w) and w not in ['min', 'max']]
+
 
 def efficiency_plots(d_sample, var_name, hdict):
     graphs = []
@@ -101,6 +104,7 @@ def efficiency_plots(d_sample, var_name, hdict):
             runtype=runtype,
             tlabel=options_dict[runtype].tlabel)
 
+
 def eff_plots_single(d_sample, vars_to_compare, var_dict):
     '''Adapted from Olena's code - can possibly merge it with efficiency_plots
     '''
@@ -114,7 +118,6 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
         hdict = var_dict[var_name]
         if varyLooseId and 'IsolationMVA' in var_name:
             loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + findLooseId(var_name)
-
 
         for _, rdict in d_sample.items():
             tree = rdict['tree']
@@ -132,7 +135,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
                 den_sel = reco_cut + ' && ' + loose_id
 
             for mvaIDname, sel in discriminators.items():
-                print "\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var']
+                dprint("\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var'])
 
                 hists.append(makeEffPlotsVars(tree=tree,
                                               varx='tau_genpt',
@@ -172,6 +175,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
             tlabel=options_dict[runtype].tlabel,
             comparePerReleaseSuffix="_comparePerRelease")
 
+
 def var_plots(d_sample, var_name, hdict):
     hists = []
     for rel, rdict in d_sample.items():
@@ -210,9 +214,10 @@ def var_plots(d_sample, var_name, hdict):
              xlabel=options_dict[runtype].xlabel,
              xlabel_eta=options_dict[runtype].xlabel_eta)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    addArguments(parser, compare=True)
+    addArguments(parser, produce=False, compare=True)
     args = parser.parse_args()
     part = args.part
     inputfiles = args.inputfiles
@@ -231,9 +236,9 @@ if __name__ == '__main__':
     ptPlotsBinning = array('d', [20, 200]) if args.onebin else array(
         'd', [20, 30, 40, 50, 60, 70, 80, 100, 150, 200])
     etaPlotsBinning = array('d', [-2.4, 2]) if args.onebin else array(
-        'd', [round(-2.4 + i*0.4, 1) for i in range(13)])
+        'd', [round(-2.4 + i * 0.4, 1) for i in range(13)])
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
-    #loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
+    # loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
     loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
 
     print "First part of plots"

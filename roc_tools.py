@@ -8,11 +8,12 @@ officialStyle(gStyle)
 colours = [1, 2, 3, 4, 6, 7, 8, 9, 47, 46, 44, 43, 42, 41, 40]
 markers = [20, 21, 22, 23, 24, 25, 26, 27]
 
+
 def histsToRoc(hsig, hbg, w_error=False):
     '''Produce ROC curve from 2 input histograms.
     Partly adapted from Giovanni's ttH code.
     '''
-    nbins = hsig.GetNbinsX()+2 # include under/overflow
+    nbins = hsig.GetNbinsX() + 2  # include under/overflow
     si = [hsig.GetBinContent(i) for i in xrange(nbins)]
     bi = [hbg.GetBinContent(i) for i in xrange(nbins)]
 
@@ -26,8 +27,8 @@ def histsToRoc(hsig, hbg, w_error=False):
         return None
 
     for i in xrange(1, nbins):
-        si[i] += si[i-1]
-        bi[i] += bi[i-1]
+        si[i] += si[i - 1]
+        bi[i] += bi[i - 1]
     fullsi, fullbi = si[:], bi[:]
     si, bi = [], []
     for i in xrange(1, nbins):
@@ -35,7 +36,7 @@ def histsToRoc(hsig, hbg, w_error=False):
         if si and (fullsi[i] < si[-1] or fullbi[i] < bi[-1]):
             continue
         # skip repetitions
-        if fullsi[i] != fullsi[i-1] or fullbi[i] != fullbi[i-1]:
+        if fullsi[i] != fullsi[i - 1] or fullbi[i] != fullbi[i - 1]:
             si.append(fullsi[i])
             bi.append(fullbi[i])
 
@@ -48,7 +49,7 @@ def histsToRoc(hsig, hbg, w_error=False):
     if not w_error:
         roc = ROOT.TGraph(bins)
         for i in xrange(bins):
-            roc.SetPoint(i, si[i]/sums, bi[i]/sumb)
+            roc.SetPoint(i, si[i] / sums, bi[i] / sumb)
 
         return roc
 
@@ -56,19 +57,19 @@ def histsToRoc(hsig, hbg, w_error=False):
     for i in xrange(bins):
         interval = 0.683
 
-        e_s_low = si[i]/sums - TEfficiency.ClopperPearson(sums, si[i], interval, False)
-        e_s_up = TEfficiency.ClopperPearson(sums, si[i], interval, True) - si[i]/sums
-        e_b_low = bi[i]/sumb - TEfficiency.ClopperPearson(sumb, bi[i], interval, False)
-        e_b_up = TEfficiency.ClopperPearson(sumb, bi[i], interval, True) - bi[i]/sumb
+        e_s_low = si[i] / sums - TEfficiency.ClopperPearson(sums, si[i], interval, False)
+        e_s_up = TEfficiency.ClopperPearson(sums, si[i], interval, True) - si[i] / sums
+        e_b_low = bi[i] / sumb - TEfficiency.ClopperPearson(sumb, bi[i], interval, False)
+        e_b_up = TEfficiency.ClopperPearson(sumb, bi[i], interval, True) - bi[i] / sumb
 
-        roc.SetPoint(i, si[i]/sums, bi[i]/sumb)
+        roc.SetPoint(i, si[i] / sums, bi[i] / sumb)
         roc.SetPointError(i, e_s_low, e_s_up, e_b_low, e_b_up)
 
     return roc
 
 
 def makeLegend(rocs, textSize=0.035, left=True):
-    (x1, y1, x2, y2) = (.18 if left else .68, .76 - textSize*max(len(rocs)-3, 0), .5 if left else .95, .88)
+    (x1, y1, x2, y2) = (.18 if left else .68, .76 - textSize * max(len(rocs) - 3, 0), .5 if left else .95, .88)
     leg = ROOT.TLegend(x1, y1, x2, y2)
     leg.SetFillColor(0)
     leg.SetShadowColor(0)
@@ -82,8 +83,9 @@ def makeLegend(rocs, textSize=0.035, left=True):
 
     return leg
 
-def makeROCPlot(rocs, set_name, ymin=0., ymax=1., xmin=0., xmax=1., logy=False):
 
+def makeROCPlot(rocs, set_name, ymin=0., ymax=1., xmin=0., xmax=1., logy=False):
+    print "makeROCPlot"
     allrocs = ROOT.TMultiGraph(set_name, '')
     point_graphs = []
     i_marker = 0
@@ -121,6 +123,6 @@ def makeROCPlot(rocs, set_name, ymin=0., ymax=1., xmin=0., xmax=1., logy=False):
 
     allrocs.leg = makeLegend(zip([r.title for r in rocs], rocs))
 
-    c.Print(set_name+'.pdf')
+    c.Print(set_name + '.png')
 
     return allrocs
