@@ -409,7 +409,7 @@ if __name__ == '__main__':
                         continue
                     if cand.numberOfHits() > 0 and (cand_track.normalizedChi2() >= 100. or cand.numberOfHits() < 3):
                         continue
-                    #dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
+                    # dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
 
                     # MB use cand methods only
                     dz_tt = cand.dz(vertices[tau_vertex_idxpf].position())

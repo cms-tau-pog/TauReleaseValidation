@@ -175,6 +175,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
             tlabel=options_dict[runtype].tlabel,
             comparePerReleaseSuffix="_comparePerRelease")
 
+
 def var_plots(d_sample, var_name, hdict):
     hists = []
     for rel, rdict in d_sample.items():

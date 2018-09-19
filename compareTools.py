@@ -6,6 +6,7 @@ from ROOT import TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double,
 
 pp = pprint.PrettyPrinter(indent=4)
 
+
 def ensureDir(file_path):
     if '/' not in file_path:
         return
@@ -20,10 +21,12 @@ def ensureDir(file_path):
                 print "Bad name for directory:", file_path
                 raise
 
+
 def save(canvas, name, extension='.png'):
     name = name.replace(' ', '').replace('&&', '')
     ensureDir(name)
     canvas.SaveAs(name + extension)
+
 
 def configureLegend(leg, ncolumn):
     leg.SetNColumns(ncolumn)
@@ -34,8 +37,17 @@ def configureLegend(leg, ncolumn):
     leg.SetTextSize(0.02)
     leg.SetTextFont(42)
 
+
 def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
-    dir_translator = {"1p":"1prong", "2p":"2prong", "3p":"3prong", "modOldDM":"oldDM", "newDM":"newDM", "1ppi0":"1prongpizero", "3pold":"3prong_old"}
+    dir_translator = {
+        "1p": "1prong",
+        "2p": "2prong",
+        "3p": "3prong",
+        "modOldDM": "oldDM",
+        "newDM": "newDM",
+        "1ppi0": "1prongpizero",
+        "3pold": "3prong_old",
+    }
 
     ymin = min(TMath.MinElement(g.GetN(), g.GetY()) for g in graphs)
     ymax = max(TMath.MaxElement(g.GetN(), g.GetY()) for g in graphs)
@@ -51,7 +63,7 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
         graph.SetMarkerSize(1)
         graph.SetMaximum(ymax * 1.4)
         graph.SetMinimum(ymin * 0.80)
-        #hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
+        # hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
         graph.Draw('ap' if i_graph == 0 else 'psame')
 
         legname = graph.GetName()
@@ -60,7 +72,7 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
 
     leg.Draw()
 
-    tex = TLatex(graphs[-1].GetXaxis().GetXmin() + 0.01*(graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax*1.4, addon.replace('tau_', ''))
+    tex = TLatex(graphs[-1].GetXaxis().GetXmin() + 0.01 * (graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax * 1.4, addon.replace('tau_', ''))
     tex.SetTextAlign(10)
     tex.SetTextFont(42)
     tex.SetTextSize(0.03)
@@ -71,7 +83,7 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
         xshift = 0.6
     if runtype.find('TTbarTau') != -1:
         xshift = 0.78
-    tex2 = TLatex(graphs[-1].GetXaxis().GetXmin() + xshift*(graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax*1.4, tlabel)
+    tex2 = TLatex(graphs[-1].GetXaxis().GetXmin() + xshift * (graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax * 1.4, tlabel)
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
     tex2.SetTextSize(0.03)
@@ -142,7 +154,7 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     if runtype.find('TTbarTau') != -1:
         xshift = 0.78
     tex2 = TLatex(hists[0].GetXaxis().GetXmin(
-    ) + xshift*(hists[0].GetXaxis().GetXmax() - hists[0].GetXaxis().GetXmin()), ymax*1.2, tlabel)
+    ) + xshift * (hists[0].GetXaxis().GetXmax() - hists[0].GetXaxis().GetXmin()), ymax * 1.2, tlabel)
 
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
@@ -173,9 +185,10 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
     c.cd()          # Go back to the main canvas
     save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
 
+
 def findLooseId(hname):
     looseIdDict = {
-        'tau_byLooseIsolationMVArun2v1DBoldDMwLT':  ['byLooseIsolationMVArun2v1DBoldDMwLT', 'byMediumIsolationMVArun2v1DBoldDMwLT', 'byTightIsolationMVArun2v1DBoldDMwLT'],
+        'tau_byLooseIsolationMVArun2v1DBoldDMwLT': ['byLooseIsolationMVArun2v1DBoldDMwLT', 'byMediumIsolationMVArun2v1DBoldDMwLT', 'byTightIsolationMVArun2v1DBoldDMwLT'],
         'tau_byLooseIsolationMVArun2v1PWoldDMwLT': ['byLooseIsolationMVArun2v1PWoldDMwLT', 'byMediumIsolationMVArun2v1PWoldDMwLT', 'byTightIsolationMVArun2v1PWoldDMwLT'],
 
         'tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017': ['byLooseIsolationMVArun2017v1DBoldDMwLT2017', 'byMediumIsolationMVArun2017v1DBoldDMwLT2017', 'byTightIsolationMVArun2017v1DBoldDMwLT2017'],
@@ -190,6 +203,7 @@ def findLooseId(hname):
 
     return 'tau_byLooseIsolationMVArun2v1DBoldDMwLT'
 
+
 def shiftAlongX(tGraph, numberOfGraphs, index):
     for binNumber in xrange(tGraph.GetN()):
         x = Double(-1)
@@ -198,6 +212,7 @@ def shiftAlongX(tGraph, numberOfGraphs, index):
         shift = (tGraph.GetErrorXhigh(binNumber)) / (numberOfGraphs + 1)
         x = x + shift * index
         tGraph.SetPoint(binNumber, x, y)
+
 
 def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, binning, xtitle='', header='', addon='', marker=20, col=1):
 
