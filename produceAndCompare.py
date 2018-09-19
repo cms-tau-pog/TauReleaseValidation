@@ -28,22 +28,31 @@ if __name__ == '__main__':
     outputFileName = args.outputFileName
 
     localdir = args.localdir
-    if len(localdir) > 1 and localdir[-1] is not "/": localdir += "/"
+    if len(localdir) > 1 and localdir[-1] is not '/':
+        localdir += '/'
 
-    mvaidstr = " --mvaid " + ' '.join(args.mvaid)
+    mvaidstr = ' --mvaid ' + ' '.join(args.mvaid)
 
-    scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind("/")+1]
+    scriptPath = os.path.realpath(__file__)[0:os.path.realpath(__file__).rfind('/') + 1]
 
-    dd = 'dryRun' if dryRun else ''
-    if debug: dd += " --debug"
+    dd = '--dryRun' if dryRun else ''
+    if debug:
+        dd += ' --debug'
 
     for i, relval in enumerate(relVals):
-        print "===================="
-        inputfile = ""
-        if len(inputfiles) > 0:
-            inputfile = ' --inputfile ' + inputfiles[i]
-        subcommand = 'python ' + scriptPath + 'produceTauValTree.py -r ' + relval + ' -g ' + globalTags[i] + inputfile  + ' --runtype ' + runtype + ' -n ' + str(maxEvents) + useRecoJets * ' -u ' + ' -s ' + storageSite + " -l " + localdir + " --tauCollection " + tauCollection + mvaidstr + dd
-        # + (len(outputFileName) > 0) * (" --outputFileName " + outputFileName)
+        print '===================='
+        inputfile = ' --inputfile ' + inputfiles[i] if len(inputfiles) > 0 else ''
+
+        subcommand = 'python ' + scriptPath + 'produceTauValTree.py --release ' + relval + \
+            ' --globalTag ' + globalTags[i] + \
+            inputfile + \
+            ' --runtype ' + runtype + \
+            ' --maxEvents ' + str(maxEvents) + \
+            useRecoJets * ' -u ' + \
+            ' -s ' + storageSite + \
+            ' -l ' + localdir + \
+            ' --tauCollection ' + tauCollection + mvaidstr + dd
+        # + (len(outputFileName) > 0) * (' --outputFileName ' + outputFileName)
 
         print subcommand
         result = subprocess.check_output(subcommand, shell=True)
@@ -54,12 +63,12 @@ if __name__ == '__main__':
     releases = ' '.join(relVals)
 
     commands = []
-    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 1' + dd)
-    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 2' + dd)
-    commands.append('python ' + scriptPath + 'compare.py -r ' + releases + ' -g ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin  + ' -p 3' + dd)
+    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 1' + dd)
+    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 2' + dd)
+    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 3' + dd)
 
     for command in commands:
-        print "===================="
+        print '===================='
         print command
-        print "===================="
+        print '===================='
         os.system(command)
