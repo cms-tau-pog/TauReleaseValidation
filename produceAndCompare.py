@@ -37,7 +37,6 @@ if __name__ == '__main__':
     dd = 'dryRun' if dryRun else ''
     if debug: dd += " --debug"
 
-
     for i, relval in enumerate(relVals):
         print "===================="
         inputfile = ""

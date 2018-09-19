@@ -5,6 +5,17 @@ import subprocess
 import eostools
 
 
+runtype_to_sample = {
+    'ZTT': 'RelValZTT_13',
+    'ZMM': 'RelValZpMM_13',
+    'QCD': 'RelValQCD_FlatPt_15_3000HS_13',
+    'TTbar': 'RelValTTbar_13',
+    'TTbarTau': 'RelValTTbar_13',
+    'ZpTT': 'RelValZpTT_1500_13',
+    'TenTaus': 'RelValTenTau_15_500',
+}
+
+
 def addArguments(parser, compare=False):
     # for all, including produceTauValTree.py
     parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
@@ -41,6 +52,7 @@ def addArguments(parser, compare=False):
         parser.add_argument('--varyLooseId', default=False, action="store_true", help='If the loose Id should be varied')
         parser.add_argument('--setLooseId', default='tau_byLooseIsolationMVArun2v1DBoldDMwLT', help='LooseId to be considered')
 
+
 def getFilesFromEOS(path, cmseospath=True):
     '''Give path in form /store/relval/CMSSW_9_4_0_pre2/...'''
     if path[-1] == "/":
@@ -68,19 +80,11 @@ def getFilesFromDAS(release, runtype, globalTag):
     print "files:", files
     return files
 
-runtype_to_sample = {
-    'ZTT':'RelValZTT_13',
-    'ZMM':'RelValZpMM_13',
-    'QCD':'RelValQCD_FlatPt_15_3000HS_13',
-    'TTbar':'RelValTTbar_13',
-    'TTbarTau':'RelValTTbar_13',
-    'ZpTT':'RelValZpTT_1500_13',
-    'TenTaus':'RelValTenTau_15_500'
-}
 
 def get_cmssw_version():
     """returns 'CMSSW_X_Y_Z'"""
     return os.environ["CMSSW_RELEASE_BASE"].split('/')[-1]
+
 
 def get_cmssw_version_number():
     """returns 'X_Y_Z' (without 'CMSSW_')"""
@@ -89,6 +93,7 @@ def get_cmssw_version_number():
 
 def versionToInt(release=9, subversion=4, patch=0):
     return release * 10000 + subversion * 100 + patch
+
 
 def is_above_cmssw_version(release=9, subversion=4, patch=0):
     split_cmssw_version = get_cmssw_version_number()

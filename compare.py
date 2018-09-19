@@ -10,7 +10,7 @@ from collections import namedtuple
 
 # The following needs to come before any other ROOT import and before argparse
 import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True 
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 from officialStyle import officialStyle
 from variables import vardict, hvardict
 from compareTools import overlay, hoverlay, makeEffPlotsVars, fillSampledic, findLooseId, shiftAlongX
