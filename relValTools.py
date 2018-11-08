@@ -8,7 +8,9 @@ globaldebug = False
 
 runtype_to_sample = {
     'ZTT': 'RelValZTT_13',
-    'ZMM': 'RelValZpMM_13',
+    'ZMM': 'RelValZMM_13',
+    'ZpMM': 'RelValZpMM_13',
+    'ZEE': 'RelValZEE_13',
     'QCD': 'RelValQCD_FlatPt_15_3000HS_13',
     'TTbar': 'RelValTTbar_13',
     'TTbarTau': 'RelValTTbar_13',
@@ -18,7 +20,7 @@ runtype_to_sample = {
 
 
 def addArguments(parser, produce=True, compare=False):
-    parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
+    parser.add_argument('--runtype', choices=['ZTT', 'ZEE', 'ZMM', 'ZpMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
     parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
 
     # useful for debugging
@@ -39,9 +41,10 @@ def addArguments(parser, produce=True, compare=False):
         parser.add_argument('--noAntiLepton', default=False, action='store_true', help='Do not access anti-lepton discriminators, e.g. if you use the tau reconstruction on top of MiniAOD that does not calculate them')
 
     if compare:
-        parser.add_argument('-p', '--part', default=0, type=int, help='Make WP plots(1), first half of histogram plots(2), \
-            second half of histogram plots(3), or everything at once(0) \
-            (This part needs to be split up to avoid a crash that happens for some reason)')
+        parser.add_argument('-p', '--part', default=0, type=int, help='Make WP plots(1), fraction of histogram plots(2..totalparts), \
+            , or everything at once(0) (This part needs to be split up to avoid a crash that happens for some reason)')
+        parser.add_argument('--totalparts', default=6, type=int, help='How many parts the compare step should be split into. \
+            Increase this value if root crashes occur.')
         parser.add_argument('-b', '--onebin', default=False, action="store_true", help='Plot inclusive efficiencies by only using one bin')
         parser.add_argument('--releases', default=["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"], nargs='*', help='List of releases')
         parser.add_argument('--globalTags', default=['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1'], nargs='*', help='List of global tags [Default: %(default)s]')
@@ -88,10 +91,15 @@ def getFilesFromEOS(path, cmseospath=True):
 
 def getFilesFromDAS(release, runtype, globalTag):
     '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
-    query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
-    print "Getting files from DAS. May take a while.... query:", query
-    result = subprocess.check_output("dasgoclient --query='" + "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, ) + "'", shell=True)
+    query = "file dataset=/{0}/{1}-{2}/MINIAODSIM".format(runtype, release, globalTag, )
+    print "Getting files from DAS. query:", query
+    result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
     files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
+    if files == []:
+        query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
+        print "First attempt unsuccessful. Generalizing query. May take a while.... query:", query
+        result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
+        files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
 
     print "files:", files
     return files
