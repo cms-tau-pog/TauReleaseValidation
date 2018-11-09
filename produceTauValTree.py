@@ -25,7 +25,7 @@ from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above
 ROOT.gROOT.SetBatch(True)
 
 tau_run_types = ['ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
-jet_run_types = ['QCD', 'TTbar']
+jet_run_types = ['QCD', 'TTbar', 'ZMM', 'ZpMM', 'ZEE']
 fill_pf_cands = False  # Slows down processing
 fill_lost_cands = False  # Slows down processing
 

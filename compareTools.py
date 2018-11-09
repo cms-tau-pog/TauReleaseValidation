@@ -91,12 +91,12 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
 
     eta = '_eta' if '_eta' in header else ''
 
-    dir_name = header.split('_')[0] + eta
-    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + dir_name + '/' + header)
+    dir_name = header.split('_')[0]
+    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + dir_name + eta + '/' + header)
 
     try:
         directory2 = dir_translator[header.split('_')[1]]
-        save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory2 + '/' + header)
+        save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory2 + eta + '/' + header)
     except (IndexError, KeyError):
         pass
 
@@ -253,13 +253,17 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=None):
     ]
 
     for index, globalTag in enumerate(globaltags):
-        sampledict[globalTag] = styles[index]
+        name = releases[index]+"_"+globalTag
+        sampledict[name] = styles[index]
+
+        jet_run_types = ['QCD', 'TTbar', 'ZMM', 'ZpMM', 'ZEE']
+        if runtype in jet_run_types: runtype = runtype + "_genJets"
 
         if not inputfiles:
-            sampledict[globalTag]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[index], globalTag, runtype))
+            sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[index], globalTag, runtype))
         else:
-            sampledict[globalTag]['file'] = TFile(inputfiles[index])
+            sampledict[name]['file'] = TFile(inputfiles[index])
 
-        sampledict[globalTag]['tree'] = sampledict[globalTag]['file'].Get('per_tau')
+        sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
 
     return sampledict

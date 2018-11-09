@@ -27,6 +27,7 @@ if __name__ == '__main__':
     dryRun = args.dryRun
     inputfiles = args.inputfiles
     outputFileName = args.outputFileName
+    totalparts = args.totalparts
 
     localdir = args.localdir
     if len(localdir) > 1 and localdir[-1] is not '/':
@@ -41,10 +42,9 @@ if __name__ == '__main__':
         dd += ' --debug'
 
     for i, relval in enumerate(relVals):
-        print '===================='
         inputfile = ' --inputfile ' + inputfiles[i] if len(inputfiles) > 0 else ''
 
-        subcommand = 'python ' + scriptPath + 'produceTauValTree.py --release ' + relval + \
+        command = 'python ' + scriptPath + 'produceTauValTree.py --release ' + relval + \
             ' --globalTag ' + globalTags[i] + \
             inputfile + \
             ' --runtype ' + runtype + \
@@ -55,8 +55,10 @@ if __name__ == '__main__':
             ' --tauCollection ' + tauCollection + mvaidstr + dd
         # + (len(outputFileName) > 0) * (' --outputFileName ' + outputFileName)
 
-        print subcommand
-        result = subprocess.check_output(subcommand, shell=True)
+        print '===================='
+        print command
+        print '===================='
+        result = subprocess.check_output(command, shell=True)
         pp.pprint(result)
 
     onebin = ' -b' if onebin else ''
@@ -64,9 +66,8 @@ if __name__ == '__main__':
     releases = ' '.join(relVals)
 
     commands = []
-    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 1' + dd)
-    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 2' + dd)
-    commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p 3' + dd)
+    for i in range(totalparts):
+        commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p ' + str(i+1) + dd)
 
     for command in commands:
         print '===================='

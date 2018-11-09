@@ -220,6 +220,7 @@ if __name__ == '__main__':
     addArguments(parser, produce=False, compare=True)
     args = parser.parse_args()
     part = args.part
+    totalparts = args.totalparts
     inputfiles = args.inputfiles
 
     runtype = args.runtype
@@ -235,14 +236,14 @@ if __name__ == '__main__':
 
     ptPlotsBinning = array('d', [20, 200]) if args.onebin else array(
         'd', [20, 30, 40, 50, 60, 70, 80, 100, 150, 200])
-    etaPlotsBinning = array('d', [-2.4, 2]) if args.onebin else array(
+    etaPlotsBinning = array('d', [-2.4, 2.4]) if args.onebin else array(
         'd', [round(-2.4 + i * 0.4, 1) for i in range(13)])
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
     # loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
     loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
 
-    print "First part of plots"
     if part in [0, 1]:
+        print "First part of plots"
         for h_name, h_dict in vardict.items():
             efficiency_plots(sampledict, h_name, h_dict)
 
@@ -250,24 +251,22 @@ if __name__ == '__main__':
         if variables and len(releases) == 1 and len(globaltags) == 1:
             eff_plots_single(sampledict, variables, vardict)
 
-    print "End first part of plots"
+        print "End first part of plots"
     if part == 1:
         exit()
+    elif part != 0:
+        print str(part)+". part of plots"
 
-    if part == 2:
-        print "Second part of plots"
+    print "Total plots that should be made: "+str(len(hvardict.items()))
     for index, (h_name, h_dict) in enumerate(hvardict.iteritems()):
-        print index, ":", h_name
-        if part == 2 and index > len(hvardict.items()) / 2:
-            break
-        elif part == 3 and index <= len(hvardict.items()) / 2:
-            continue
-        elif part == 3 and index - 1 == len(hvardict.items()) / 2:
-            print "Third part of plots"
-
+        if part != 0:
+            if index >= float(len(hvardict.items())) / (totalparts-1) * (part-1): break
+            if index < float(len(hvardict.items())) / (totalparts-1) * (part-2): continue
+                
         if runtype not in ['ZTT', 'TTbarTau'] and h_name.find('pt_resolution') != -1:
             continue
 
+        print "Doing",index+1, ":", h_name
         var_plots(sampledict, h_name, h_dict)
 
     print "Finished"
