@@ -94,12 +94,11 @@ def getFilesFromDAS(release, runtype, globalTag):
     query = "file dataset=/{0}/{1}-{2}/MINIAODSIM".format(runtype, release, globalTag, )
     print "Getting files from DAS. query:", query
     result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
-    files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
-    if files == []:
+    if not result:
         query = "file dataset=/*{0}*/*{1}*{2}*/MINIAODSIM".format(runtype, release, globalTag, )
         print "First attempt unsuccessful. Generalizing query. May take a while.... query:", query
         result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
-        files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
+    files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
 
     print "files:", files
     return files
