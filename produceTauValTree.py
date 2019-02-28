@@ -25,7 +25,9 @@ from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above
 ROOT.gROOT.SetBatch(True)
 
 tau_run_types = ['ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
-jet_run_types = ['QCD', 'TTbar', 'ZMM', 'ZpMM', 'ZEE']
+jet_run_types = ['QCD', 'TTbar']
+muon_run_types = ['ZMM', 'ZpMM']
+ele_run_types  = ['ZEE']
 fill_pf_cands = False  # Slows down processing
 fill_lost_cands = False  # Slows down processing
 
@@ -312,9 +314,9 @@ if __name__ == '__main__':
                 all_gen_jets = [jet for jet in genJetH.product() if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
                 gen_jets = removeOverlap(all_gen_jets, genLeptons)
                 refObjs = copy.deepcopy(gen_jets)
-        elif runtype == 'ZEE':
+        elif runtype in ele_run_types:
             refObjs = copy.deepcopy(genElectrons)
-        elif runtype == 'ZMM':
+        elif runtype in muon_run_types:
             refObjs = copy.deepcopy(genMuons)
 
         ###
