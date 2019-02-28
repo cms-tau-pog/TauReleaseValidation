@@ -60,12 +60,13 @@ def removeOverlap(all_jets, gen_leptons, dR2=0.25):
 
 
 def isGenLepton(lep_cand, pid):
+    # more relaxed definition of leptons faking taus: select also particles that radiated
+    # and would otherwise fail isPromptFinalState()
     return (abs(lep_cand.pdgId()) == pid and
-            lep_cand.status() == 1 and
-            (lep_cand.isPromptFinalState() or lep_cand.isDirectPromptTauDecayProductFinalState()) and
+            (lep_cand.statusFlags().isPrompt() or lep_cand.isDirectPromptTauDecayProductFinalState()) and
             lep_cand.pt() > 20 and
             abs(lep_cand.eta()) < 2.3)
-
+            
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
