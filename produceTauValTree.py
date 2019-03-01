@@ -55,7 +55,7 @@ def visibleP4(gen):
         (d.p4() for d in gen.final_ds
             if abs(d.pdgId()) not in [12, 14, 16]),
         ROOT.math.XYZTLorentzVectorD()
-        )
+    )
 
 
 def removeOverlap(all_jets, gen_leptons, dR2=0.25):
@@ -85,7 +85,7 @@ def isGenLepton(lep_cand, pid):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
-        )
+    )
     addArguments(parser, produce=True, compare=False)
     args = parser.parse_args()
 
@@ -119,7 +119,7 @@ if __name__ == '__main__':
             RelVal,
             runtype_to_sample[runtype],
             globalTag
-            )
+        )
 
         if storageSite == "eos":
             filelist = getFilesFromEOS(path)
@@ -154,9 +154,9 @@ if __name__ == '__main__':
                 result = subprocess.check_output(
                     "mkdir -p {outputFileName}".format(
                         outputFileName=outputFileName
-                        ),
+                    ),
                     shell=True
-                    )
+                )
 
         genSuffix = ""
         if not useRecoJets and (runtype in jet_run_types):
@@ -335,8 +335,8 @@ if __name__ == '__main__':
                         p.isPromptDecayed()
                     )
                 )
-               )
-            ]
+            )
+        ]
 
         refObjs = []
         if runtype in tau_run_types:
@@ -346,7 +346,7 @@ if __name__ == '__main__':
                 gen_dm = tauDecayModes.genDecayModeInt(
                     [d for d in gen_tau.final_ds
                         if abs(d.pdgId()) not in [12, 14, 16]]
-                        )
+                )
                 if abs(gen_tau.visP4.eta()) > 2.3:
                     continue
                 if gen_tau.visP4.pt() < 10:
@@ -368,7 +368,7 @@ if __name__ == '__main__':
                     if (jet.pt() > 20 and
                         abs(jet.eta()) < 2.3 and
                         jet.pt() < 200.5)
-                    ]
+                ]
                 jets = removeOverlap(all_jets, genLeptons)
                 refObjs = copy.deepcopy(jets)
             else:
@@ -378,7 +378,7 @@ if __name__ == '__main__':
                     if (jet.pt() > 20 and
                         abs(jet.eta()) < 2.3 and
                         jet.pt() < 200.5)
-                    ]
+                ]
                 gen_jets = removeOverlap(all_gen_jets, genLeptons)
                 refObjs = copy.deepcopy(gen_jets)
         elif runtype in ele_run_types:
@@ -406,7 +406,7 @@ if __name__ == '__main__':
                 gen_dm = tauDecayModes.genDecayModeInt(
                     [d for d in finalDaughters(refObj)
                         if (abs(d.pdgId()) not in [12, 14, 16])]
-                    )
+                )
 
                 all_var_dict['tau_gendm'].fill(gen_dm)
                 all_var_dict['tau_genpt'].fill(refObj.visP4.pt())
@@ -446,7 +446,7 @@ if __name__ == '__main__':
                 all_var_dict['tau_neutralpt'].fill(
                     sum((d.p4() for d in tau.signalGammaCands()),
                         ROOT.math.XYZTLorentzVectorD()).pt()
-                    )
+                )
 
                 # Use candidate to vertex associaton as in MiniAOD
                 tau_vertex_idxpf = tau.leadChargedHadrCand().vertexRef().key()
@@ -491,7 +491,7 @@ if __name__ == '__main__':
                     if (cand.pt() <= 0.5 or
                             cand.dxy(
                                 vertices[tau_vertex_idxpf].position()
-                                    ) >= 0.1):
+                    ) >= 0.1):
                         continue
 
                     cand_track = get_track(cand)
