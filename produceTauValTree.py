@@ -128,7 +128,7 @@ if __name__ == '__main__':
                 result = subprocess.check_output(
                     "mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
 
-	genSuffix = ""
+        genSuffix = ""
         if not useRecoJets and (runtype in jet_run_types):
             genSuffix = "_genJets"
         if runtype in muon_run_types :
