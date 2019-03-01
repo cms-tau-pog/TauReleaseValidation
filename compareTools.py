@@ -2,7 +2,8 @@ import os
 import errno
 import pprint
 
-from ROOT import TH1F, TFile, TCanvas, TPad, TLegend, TGraphAsymmErrors, Double, TLatex, TMath
+from ROOT import TH1F, TFile, TCanvas, TPad, TLegend, \
+    TGraphAsymmErrors, Double, TLatex, TMath
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -38,7 +39,8 @@ def configureLegend(leg, ncolumn):
     leg.SetTextFont(42)
 
 
-def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
+def overlay(graphs, header, addon, runtype,
+            tlabel, comparePerReleaseSuffix=""):
     dir_translator = {
         "1p": "1prong",
         "2p": "2prong",
@@ -63,7 +65,8 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
         graph.SetMarkerSize(1)
         graph.SetMaximum(ymax * 1.4)
         graph.SetMinimum(ymin * 0.80)
-        # hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)), hist.GetXaxis().GetXmax()+(3*(ii-3)))
+        # hist.GetXaxis().SetLimits(hist.GetXaxis().GetXmin()+(3*(ii-3)),
+        #                           hist.GetXaxis().GetXmax()+(3*(ii-3)))
         graph.Draw('ap' if i_graph == 0 else 'psame')
 
         legname = graph.GetName()
@@ -72,7 +75,13 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
 
     leg.Draw()
 
-    tex = TLatex(graphs[-1].GetXaxis().GetXmin() + 0.01 * (graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax * 1.4, addon.replace('tau_', ''))
+    tex = TLatex(
+        (graphs[-1].GetXaxis().GetXmin() +
+         0.01 * (graphs[-1].GetXaxis().GetXmax() -
+                 graphs[-1].GetXaxis().GetXmin())),
+        ymax * 1.4,
+        addon.replace('tau_', '')
+    )
     tex.SetTextAlign(10)
     tex.SetTextFont(42)
     tex.SetTextSize(0.03)
@@ -83,7 +92,13 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
         xshift = 0.6
     if runtype.find('TTbarTau') != -1:
         xshift = 0.78
-    tex2 = TLatex(graphs[-1].GetXaxis().GetXmin() + xshift * (graphs[-1].GetXaxis().GetXmax() - graphs[-1].GetXaxis().GetXmin()), ymax * 1.4, tlabel)
+    tex2 = TLatex(
+        (graphs[-1].GetXaxis().GetXmin() +
+         xshift * (graphs[-1].GetXaxis().GetXmax() -
+                   graphs[-1].GetXaxis().GetXmin())),
+        ymax * 1.4,
+        tlabel
+    )
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
     tex2.SetTextSize(0.03)
@@ -92,18 +107,33 @@ def overlay(graphs, header, addon, runtype, tlabel, comparePerReleaseSuffix=""):
     eta = '_eta' if '_eta' in header else ''
 
     dir_name = header.split('_')[0]
-    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + dir_name + eta + '/' + header)
+    save(
+        canvas,
+        'compare_' + runtype + comparePerReleaseSuffix +
+        '/' + dir_name + eta + '/' + header
+    )
 
     try:
         directory2 = dir_translator[header.split('_')[1]]
-        save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/' + directory2 + eta + '/' + header)
+        save(
+            canvas,
+            'compare_' + runtype + comparePerReleaseSuffix +
+            '/' + directory2 + eta + '/' + header
+        )
     except (IndexError, KeyError):
         pass
 
-    save(canvas, 'compare_' + runtype + comparePerReleaseSuffix + '/all' + eta + '/' + header)
+    save(
+        canvas,
+        'compare_' + runtype +
+        comparePerReleaseSuffix + '/all' +
+        eta + '/' + header
+    )
 
 
-def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, comparePerReleaseSuffix=""):
+def hoverlay(hists, xtitle, ytitle,
+             name, runtype, tlabel,
+             xlabel, xlabel_eta, comparePerReleaseSuffix=""):
     c = TCanvas()
 
     # Upper plot will be in pad1
@@ -153,8 +183,12 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
         xshift = 0.6
     if runtype.find('TTbarTau') != -1:
         xshift = 0.78
-    tex2 = TLatex(hists[0].GetXaxis().GetXmin(
-    ) + xshift * (hists[0].GetXaxis().GetXmax() - hists[0].GetXaxis().GetXmin()), ymax * 1.2, tlabel)
+    tex2 = TLatex((hists[0].GetXaxis().GetXmin() +
+                   xshift *
+                   (hists[0].GetXaxis().GetXmax() -
+                    hists[0].GetXaxis().GetXmin())),
+                  ymax * 1.2,
+                  tlabel)
 
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
@@ -183,19 +217,54 @@ def hoverlay(hists, xtitle, ytitle, name, runtype, tlabel, xlabel, xlabel_eta, c
             hist.Draw('epsame')
 
     c.cd()          # Go back to the main canvas
-    save(c, 'compare_' + runtype + comparePerReleaseSuffix + '/histograms/hist_' + name)
+    save(
+        c,
+        ('compare_' +
+         runtype +
+         comparePerReleaseSuffix +
+         '/histograms/hist_' +
+         name)
+    )
 
 
 def findLooseId(hname):
     looseIdDict = {
-        'tau_byLooseIsolationMVArun2v1DBoldDMwLT': ['byLooseIsolationMVArun2v1DBoldDMwLT', 'byMediumIsolationMVArun2v1DBoldDMwLT', 'byTightIsolationMVArun2v1DBoldDMwLT'],
-        'tau_byLooseIsolationMVArun2v1PWoldDMwLT': ['byLooseIsolationMVArun2v1PWoldDMwLT', 'byMediumIsolationMVArun2v1PWoldDMwLT', 'byTightIsolationMVArun2v1PWoldDMwLT'],
+        'tau_byLooseIsolationMVArun2v1DBoldDMwLT': [
+            'byLooseIsolationMVArun2v1DBoldDMwLT',
+            'byMediumIsolationMVArun2v1DBoldDMwLT',
+            'byTightIsolationMVArun2v1DBoldDMwLT'
+        ],
+        'tau_byLooseIsolationMVArun2v1PWoldDMwLT': [
+            'byLooseIsolationMVArun2v1PWoldDMwLT',
+            'byMediumIsolationMVArun2v1PWoldDMwLT',
+            'byTightIsolationMVArun2v1PWoldDMwLT'
+        ],
 
-        'tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017': ['byLooseIsolationMVArun2017v1DBoldDMwLT2017', 'byMediumIsolationMVArun2017v1DBoldDMwLT2017', 'byTightIsolationMVArun2017v1DBoldDMwLT2017'],
-        'tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017': ['byLooseIsolationMVArun2017v2DBoldDMwLT2017', 'byMediumIsolationMVArun2017v2DBoldDMwLT2017', 'byTightIsolationMVArun2017v2DBoldDMwLT2017'],
-        'tau_byLooseIsolationMVArun2v1DBoldDMwLT2016': ['byLooseIsolationMVArun2v1DBoldDMwLT2016', 'byMediumIsolationMVArun2v1DBoldDMwLT2016', 'byTightIsolationMVArun2v1DBoldDMwLT2016'],
-        'tau_byLooseIsolationMVArun2v1DBnewDMwLT2016': ['byLooseIsolationMVArun2v1DBnewDMwLT2016', 'byMediumIsolationMVArun2v1DBnewDMwLT2016', 'byTightIsolationMVArun2v1DBnewDMwLT2016'],
-        'tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017': ['byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017', 'byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017', 'byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017']
+        'tau_byLooseIsolationMVArun2017v1DBoldDMwLT2017': [
+            'byLooseIsolationMVArun2017v1DBoldDMwLT2017',
+            'byMediumIsolationMVArun2017v1DBoldDMwLT2017',
+            'byTightIsolationMVArun2017v1DBoldDMwLT2017'
+        ],
+        'tau_byLooseIsolationMVArun2017v2DBoldDMwLT2017': [
+            'byLooseIsolationMVArun2017v2DBoldDMwLT2017',
+            'byMediumIsolationMVArun2017v2DBoldDMwLT2017',
+            'byTightIsolationMVArun2017v2DBoldDMwLT2017'
+        ],
+        'tau_byLooseIsolationMVArun2v1DBoldDMwLT2016': [
+            'byLooseIsolationMVArun2v1DBoldDMwLT2016',
+            'byMediumIsolationMVArun2v1DBoldDMwLT2016',
+            'byTightIsolationMVArun2v1DBoldDMwLT2016'
+        ],
+        'tau_byLooseIsolationMVArun2v1DBnewDMwLT2016': [
+            'byLooseIsolationMVArun2v1DBnewDMwLT2016',
+            'byMediumIsolationMVArun2v1DBnewDMwLT2016',
+            'byTightIsolationMVArun2v1DBnewDMwLT2016'
+        ],
+        'tau_byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017': [
+            'byLooseIsolationMVArun2017v2DBoldDMdR0p3wLT2017',
+            'byMediumIsolationMVArun2017v2DBoldDMdR0p3wLT2017',
+            'byTightIsolationMVArun2017v2DBoldDMdR0p3wLT2017'
+        ]
     }
     for key, value in looseIdDict.items():
         if hname in value:
@@ -214,13 +283,24 @@ def shiftAlongX(tGraph, numberOfGraphs, index):
         tGraph.SetPoint(binNumber, x, y)
 
 
-def makeEffPlotsVars(tree, varx, numeratorAddSelection, baseSelection, binning, xtitle='', header='', addon='', marker=20, col=1):
+def makeEffPlotsVars(tree,
+                     varx,
+                     numeratorAddSelection,
+                     baseSelection,
+                     binning,
+                     xtitle='', header='', addon='', marker=20, col=1):
 
-    _denomHist_ = TH1F('h_effp_' + addon, 'h_effp' + addon, len(binning) - 1, binning)
-    _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon, len(binning) - 1, binning)
+    _denomHist_ = TH1F('h_effp_' + addon,
+                       'h_effp' + addon,
+                       len(binning) - 1,
+                       binning)
+    _nominatorHist_ = TH1F('ah_effp_' + addon, 'ah_effp' + addon,
+                           len(binning) - 1,
+                           binning)
 
     tree.Draw(varx + ' >> ' + _denomHist_.GetName(), baseSelection)
-    tree.Draw(varx + ' >> ' + _nominatorHist_.GetName(), baseSelection + ' && ' + numeratorAddSelection)
+    tree.Draw(varx + ' >> ' + _nominatorHist_.GetName(),
+              baseSelection + ' && ' + numeratorAddSelection)
 
     g_eff = TGraphAsymmErrors()
     g_eff.Divide(_nominatorHist_, _denomHist_, "cl=0.683 b(1,1) mode")
@@ -256,14 +336,23 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=None):
         name = releases[index]+"_"+globalTag
         sampledict[name] = styles[index]
 
-        jet_run_types = ['QCD', 'TTbar', 'ZMM', 'ZpMM', 'ZEE']
-        if runtype in jet_run_types: runtype = runtype + "_genJets"
+        jet_run_types = ['QCD', 'TTbar']
+        muon_run_types = ['ZMM', 'ZpMM']
+        ele_run_types = ['ZEE']
+        if runtype in jet_run_types:
+            runtype = runtype + "_genJets"
+        if runtype in muon_run_types:
+            runtype = runtype + "_genMuon"
+        if runtype in ele_run_types:
+            runtype = runtype + "_genEle"
 
         if not inputfiles:
-            sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[index], globalTag, runtype))
+            sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(
+                releases[index],
+                globalTag,
+                runtype))
         else:
             sampledict[name]['file'] = TFile(inputfiles[index])
-
         sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
 
     return sampledict

@@ -11,23 +11,27 @@ import copy
 import subprocess
 
 import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True
+import argparse  # needs to come after ROOT import
 
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, bestMatch, deltaR2
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from Var import Var
-from tau_ids import all_tau_ids, lepton_tau_ids, tau_ids, fill_tau_ids
+from tau_ids import all_tau_ids, lepton_tau_ids, \
+    tau_ids, fill_tau_ids
 
-import argparse  # needs to come after ROOT import
-from relValTools import addArguments, getFilesFromEOS, getFilesFromDAS, is_above_cmssw_version, runtype_to_sample, dprint
 
+from relValTools import addArguments, getFilesFromEOS, \
+    getFilesFromDAS, is_above_cmssw_version, \
+    runtype_to_sample, dprint
+
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(True)
 
 tau_run_types = ['ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
 jet_run_types = ['QCD', 'TTbar']
 muon_run_types = ['ZMM', 'ZpMM']
-ele_run_types  = ['ZEE']
+ele_run_types = ['ZEE']
 fill_pf_cands = False  # Slows down processing
 fill_lost_cands = False  # Slows down processing
 
@@ -47,7 +51,11 @@ def finalDaughters(gen, daughters=None):
 
 def visibleP4(gen):
     gen.final_ds = finalDaughters(gen)
-    return sum((d.p4() for d in gen.final_ds if abs(d.pdgId()) not in [12, 14, 16]), ROOT.math.XYZTLorentzVectorD())
+    return sum(
+        (d.p4() for d in gen.final_ds
+            if abs(d.pdgId()) not in [12, 14, 16]),
+        ROOT.math.XYZTLorentzVectorD()
+    )
 
 
 def removeOverlap(all_jets, gen_leptons, dR2=0.25):
@@ -60,16 +68,24 @@ def removeOverlap(all_jets, gen_leptons, dR2=0.25):
 
 
 def isGenLepton(lep_cand, pid):
-    # more relaxed definition of leptons faking taus: select also particles that radiated
+    # more relaxed definition of leptons faking taus:
+    # select also particles that radiated
     # and would otherwise fail isPromptFinalState()
-    return (abs(lep_cand.pdgId()) == pid and
-            (lep_cand.statusFlags().isPrompt() or lep_cand.isDirectPromptTauDecayProductFinalState()) and
-            lep_cand.pt() > 20 and
-            abs(lep_cand.eta()) < 2.3)
-            
+    return (
+        abs(lep_cand.pdgId()) == pid and
+        (
+            lep_cand.statusFlags().isPrompt() or
+            lep_cand.isDirectPromptTauDecayProductFinalState()
+        ) and
+        lep_cand.pt() > 20 and
+        abs(lep_cand.eta()) < 2.3
+    )
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     addArguments(parser, produce=True, compare=False)
     args = parser.parse_args()
 
@@ -99,7 +115,11 @@ if __name__ == '__main__':
     if inputfiles:
         filelist = inputfiles
     else:
-        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(RelVal, runtype_to_sample[runtype], globalTag)
+        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(
+            RelVal,
+            runtype_to_sample[runtype],
+            globalTag
+        )
 
         if storageSite == "eos":
             filelist = getFilesFromEOS(path)
@@ -108,16 +128,22 @@ if __name__ == '__main__':
                 RelVal, runtype_to_sample[runtype], globalTag)
         elif storageSite == 'loc':
             filelist = getFilesFromEOS(
-                localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
+                localdir + runtype_to_sample[runtype] +
+                "/" + RelVal + '-' + globalTag + '/',
+                cmseospath=False)
 
         if not filelist:
             print 'Sample', RelVal, runtype, 'does not exist in', path
             sys.exit(0)
 
-    print len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents
+    print len(filelist),
+    "files will be analyzed:",
+    filelist,
+    '\nEvents will be analyzed: %i' % maxEvents
+
     events = Events(filelist)
 
-    ######## Output file ########
+    # +++++++ Output file +++++++++
     outputFileName = args.outputFileName
     if not outputFileName:
         if storageSite == 'loc':
@@ -126,21 +152,32 @@ if __name__ == '__main__':
                 '-' + globalTag + '/' + 'TauValTree/'
             if not os.path.isdir(outputFileName):
                 result = subprocess.check_output(
-                    "mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
+                    "mkdir -p {outputFileName}".format(
+                        outputFileName=outputFileName
+                    ),
+                    shell=True
+                )
 
-        genJetssuffix = ""
+        genSuffix = ""
         if not useRecoJets and (runtype in jet_run_types):
-            genJetssuffix = "_genJets"
+            genSuffix = "_genJets"
+        if runtype in muon_run_types:
+            genSuffix = "_genMuon"
+        if runtype in ele_run_types:
+            genSuffix = "_genEle"
 
         outputFileName += 'Myroot_' + RelVal + '_' + \
-            globalTag + '_' + runtype + genJetssuffix + '.root'
+            globalTag + '_' + runtype + genSuffix + '.root'
+
     else:
         if "/" in outputFileName and outputFileName[0] != "/":
-            print "location of output file has a dir structure but doesn't start with dash"
+            print "location of output file has a dir structure " \
+                  " but doesn't start with dash"
             sys.exit(0)
         if outputFileName[-5:] != ".root":
             outputFileName += '.root'
-            print "output file should have a root format - added automatically:", outputFileName
+            print "output file should have a root format" \
+                  " - added automatically:", outputFileName
 
     print "outputFileName:", outputFileName
 
@@ -280,10 +317,26 @@ if __name__ == '__main__':
             p for p in genParticles if isGenLepton(p, 13)]
 
         # gen leptons to clean jets with respect to them (e.g. for TTBar)
-        genLeptons = [p for p in genParticles if
-                      p.status() == 1 and p.pt() > 15 and
-                      (((abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13) and p.isPromptFinalState()) or
-                        (abs(p.pdgId()) == 15 and p.isPromptDecayed()))]
+        genLeptons = [
+            p for p in genParticles
+            if (
+                p.status() == 1 and
+                p.pt() > 15 and
+                (
+                    (
+                        (
+                            abs(p.pdgId()) == 11 or
+                            abs(p.pdgId()) == 13
+                        ) and
+                        p.isPromptFinalState()
+                    ) or
+                    (
+                        abs(p.pdgId()) == 15 and
+                        p.isPromptDecayed()
+                    )
+                )
+            )
+        ]
 
         refObjs = []
         if runtype in tau_run_types:
@@ -291,7 +344,9 @@ if __name__ == '__main__':
                 gen_tau.visP4 = visibleP4(gen_tau)
 
                 gen_dm = tauDecayModes.genDecayModeInt(
-                    [d for d in gen_tau.final_ds if abs(d.pdgId()) not in [12, 14, 16]])
+                    [d for d in gen_tau.final_ds
+                        if abs(d.pdgId()) not in [12, 14, 16]]
+                )
                 if abs(gen_tau.visP4.eta()) > 2.3:
                     continue
                 if gen_tau.visP4.pt() < 10:
@@ -299,7 +354,8 @@ if __name__ == '__main__':
                 if gen_dm == -11 or gen_dm == -13:
                     continue
                 # For the 10-tau sample, remove gen taus that have overlap
-                if any(deltaR(other_tau, gen_tau) < 0.5 for other_tau in genTaus if other_tau is not gen_tau):
+                if any(deltaR(other_tau, gen_tau) < 0.5
+                       for other_tau in genTaus if other_tau is not gen_tau):
                     continue
 
                 refObjs.append(gen_tau)
@@ -307,12 +363,22 @@ if __name__ == '__main__':
         elif runtype in jet_run_types:
             if useRecoJets:
                 event.getByLabel("slimmedJets", jetH)
-                all_jets = [jet for jet in jetH.product() if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
+                all_jets = [
+                    jet for jet in jetH.product()
+                    if (jet.pt() > 20 and
+                        abs(jet.eta()) < 2.3 and
+                        jet.pt() < 200.5)
+                ]
                 jets = removeOverlap(all_jets, genLeptons)
                 refObjs = copy.deepcopy(jets)
             else:
                 event.getByLabel("slimmedGenJets", genJetH)
-                all_gen_jets = [jet for jet in genJetH.product() if jet.pt() > 20 and abs(jet.eta()) < 2.3 and jet.pt() < 200.5]
+                all_gen_jets = [
+                    jet for jet in genJetH.product()
+                    if (jet.pt() > 20 and
+                        abs(jet.eta()) < 2.3 and
+                        jet.pt() < 200.5)
+                ]
                 gen_jets = removeOverlap(all_gen_jets, genLeptons)
                 refObjs = copy.deepcopy(gen_jets)
         elif runtype in ele_run_types:
@@ -338,13 +404,23 @@ if __name__ == '__main__':
 
             if runtype in tau_run_types:
                 gen_dm = tauDecayModes.genDecayModeInt(
-                    [d for d in finalDaughters(refObj) if abs(d.pdgId()) not in [12, 14, 16]])
+                    [d for d in finalDaughters(refObj)
+                        if (abs(d.pdgId()) not in [12, 14, 16])]
+                )
+
                 all_var_dict['tau_gendm'].fill(gen_dm)
                 all_var_dict['tau_genpt'].fill(refObj.visP4.pt())
                 all_var_dict['tau_geneta'].fill(refObj.visP4.eta())
                 all_var_dict['tau_genphi'].fill(refObj.visP4.phi())
-                charged_p4 = sum((d.p4() for d in refObj.final_ds if d.charge()), ROOT.math.XYZTLorentzVectorD())
-                neutral_p4 = sum((d.p4() for d in refObj.final_ds if abs(d.pdgId()) not in [12, 14, 16] and not d.charge()), ROOT.math.XYZTLorentzVectorD())
+                charged_p4 = sum(
+                    (d.p4() for d in refObj.final_ds
+                        if d.charge()),
+                    ROOT.math.XYZTLorentzVectorD())
+                neutral_p4 = sum(
+                    (d.p4() for d in refObj.final_ds
+                        if (abs(d.pdgId()) not in [12, 14, 16] and
+                            not d.charge())),
+                    ROOT.math.XYZTLorentzVectorD())
                 all_var_dict['tau_genchargedpt'].fill(charged_p4.pt())
                 all_var_dict['tau_genneutralpt'].fill(neutral_p4.pt())
             else:
@@ -364,8 +440,13 @@ if __name__ == '__main__':
                 all_var_dict['tau_phi'].fill(tau.phi())
                 all_var_dict['tau_mass'].fill(tau.mass())
 
-                all_var_dict['tau_chargedpt'].fill(sum((d.p4() for d in tau.signalChargedHadrCands()), ROOT.math.XYZTLorentzVectorD()).pt())
-                all_var_dict['tau_neutralpt'].fill(sum((d.p4() for d in tau.signalGammaCands()), ROOT.math.XYZTLorentzVectorD()).pt())
+                all_var_dict['tau_chargedpt'].fill(
+                    sum((d.p4() for d in tau.signalChargedHadrCands()),
+                        ROOT.math.XYZTLorentzVectorD()).pt())
+                all_var_dict['tau_neutralpt'].fill(
+                    sum((d.p4() for d in tau.signalGammaCands()),
+                        ROOT.math.XYZTLorentzVectorD()).pt()
+                )
 
                 # Use candidate to vertex associaton as in MiniAOD
                 tau_vertex_idxpf = tau.leadChargedHadrCand().vertexRef().key()
@@ -393,7 +474,10 @@ if __name__ == '__main__':
 
                     if not abs(cand.charge()) > 0:
                         continue
-                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5:
+                    if deltaR(tau.eta(),
+                              tau.phi(),
+                              cand.eta(),
+                              cand.phi()) > 0.5:
                         continue
 
                     def get_track(charged_cand):
@@ -404,13 +488,18 @@ if __name__ == '__main__':
                         return charged_cand.pseudoTrack()
 
                     # MB use candidate methods only
-                    if cand.pt() <= 0.5 or cand.dxy(vertices[tau_vertex_idxpf].position()) >= 0.1:
+                    if (cand.pt() <= 0.5 or
+                            cand.dxy(
+                                vertices[tau_vertex_idxpf].position()
+                    ) >= 0.1):
                         continue
 
                     cand_track = get_track(cand)
                     if not cand_track:
                         continue
-                    if cand.numberOfHits() > 0 and (cand_track.normalizedChi2() >= 100. or cand.numberOfHits() < 3):
+                    if (cand.numberOfHits() > 0 and
+                            (cand_track.normalizedChi2() >= 100. or
+                             cand.numberOfHits() < 3)):
                         continue
                     # dz_tt = tt.dz(vertices[tau_vertex_idxpf].position())
 
@@ -426,16 +515,21 @@ if __name__ == '__main__':
                     if abs(dz_tt) < 0.015:
                         all_var_dict['tau_iso_dz001'].add(cand.pt())
 
-                    if cand.vertexRef().key() == tau_vertex_idxpf and cand.pvAssociationQuality() > 4:
+                    if (cand.vertexRef().key() == tau_vertex_idxpf and
+                            cand.pvAssociationQuality() > 4):
                         all_var_dict['tau_iso_pv'].add(cand.pt())
 
-                    elif cand.vertexRef().key() != tau_vertex_idxpf and abs(dz_tt) < 0.2:
+                    elif (cand.vertexRef().key() != tau_vertex_idxpf and
+                          abs(dz_tt) < 0.2):
                         all_var_dict['tau_iso_nopv'].add(cand.pt())
 
                 for cand in tau.isolationGammaCands():
                     if abs(cand.charge()) > 0 or abs(cand.pdgId()) != 22:
                         continue
-                    if deltaR(tau.eta(), tau.phi(), cand.eta(), cand.phi()) > 0.5:
+                    if deltaR(tau.eta(),
+                              tau.phi(),
+                              cand.eta(),
+                              cand.phi()) > 0.5:
                         continue
                     if cand.pt() <= 0.5:
                         continue
