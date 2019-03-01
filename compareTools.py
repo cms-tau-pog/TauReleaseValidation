@@ -256,8 +256,12 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=None):
         name = releases[index]+"_"+globalTag
         sampledict[name] = styles[index]
 
-        jet_run_types = ['QCD', 'TTbar', 'ZMM', 'ZpMM', 'ZEE']
+	jet_run_types = ['QCD', 'TTbar']
+        muon_run_types = ['ZMM', 'ZpMM']
+        ele_run_types  = ['ZEE']
         if runtype in jet_run_types: runtype = runtype + "_genJets"
+	if runtype in muon_run_types: runtype = runtype + "_genMuon"
+        if runtype in ele_run_types: runtype = runtype + "_genEle"
 
         if not inputfiles:
             sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(releases[index], globalTag, runtype))

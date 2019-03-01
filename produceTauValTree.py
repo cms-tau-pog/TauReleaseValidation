@@ -128,12 +128,17 @@ if __name__ == '__main__':
                 result = subprocess.check_output(
                     "mkdir -p {outputFileName}".format(outputFileName=outputFileName), shell=True)
 
-        genJetssuffix = ""
+	genSuffix = ""
         if not useRecoJets and (runtype in jet_run_types):
-            genJetssuffix = "_genJets"
+            genSuffix = "_genJets"
+        if runtype in muon_run_types :
+            genSuffix = "_genMuon"
+        if runtype in ele_run_types :
+            genSuffix = "_genEle"
 
         outputFileName += 'Myroot_' + RelVal + '_' + \
-            globalTag + '_' + runtype + genJetssuffix + '.root'
+            globalTag + '_' + runtype + genSuffix + '.root'
+
     else:
         if "/" in outputFileName and outputFileName[0] != "/":
             print "location of output file has a dir structure but doesn't start with dash"
