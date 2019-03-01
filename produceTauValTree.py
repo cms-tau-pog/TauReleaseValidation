@@ -81,6 +81,7 @@ def isGenLepton(lep_cand, pid):
         abs(lep_cand.eta()) < 2.3
     )
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
