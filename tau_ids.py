@@ -3,27 +3,42 @@ all_tau_ids = [
     ('byLooseCombinedIsolationDeltaBetaCorr3Hits', int),
     ('byMediumCombinedIsolationDeltaBetaCorr3Hits', int),
     ('byTightCombinedIsolationDeltaBetaCorr3Hits', int),
+
     ('byIsolationMVArun2v1DBoldDMwLTraw', float),
+    ('byVVLooseIsolationMVArun2v1DBoldDMwLT', int),
     ('byVLooseIsolationMVArun2v1DBoldDMwLT', int),
     ('byLooseIsolationMVArun2v1DBoldDMwLT', int),
     ('byMediumIsolationMVArun2v1DBoldDMwLT', int),
     ('byTightIsolationMVArun2v1DBoldDMwLT', int),
     ('byVTightIsolationMVArun2v1DBoldDMwLT', int),
     ('byVVTightIsolationMVArun2v1DBoldDMwLT', int),
-    ('byIsolationMVArun2v1PWoldDMwLTraw', float),
-    ('byLooseIsolationMVArun2v1PWoldDMwLT', int),
-    ('byMediumIsolationMVArun2v1PWoldDMwLT', int),
-    ('byTightIsolationMVArun2v1PWoldDMwLT', int),
-    ('byVLooseIsolationMVArun2v1PWoldDMwLT', int),
-    ('byVTightIsolationMVArun2v1PWoldDMwLT', int),
-    ('byVVTightIsolationMVArun2v1PWoldDMwLT', int),
+
+    #('byIsolationMVArun2v1PWoldDMwLTraw', float), # Gone? Not in 11_0_0_pre13
+    #('byVLooseIsolationMVArun2v1PWoldDMwLT', int),
+    #('byLooseIsolationMVArun2v1PWoldDMwLT', int),
+    #('byMediumIsolationMVArun2v1PWoldDMwLT', int),
+    #('byTightIsolationMVArun2v1PWoldDMwLT', int),
+    #('byVTightIsolationMVArun2v1PWoldDMwLT', int),
+    #('byVVTightIsolationMVArun2v1PWoldDMwLT', int),
+
+    ('byIsolationMVArun2v1DBnewDMwLTraw', float),
+    ('byVVLooseIsolationMVArun2v1DBnewDMwLT', int),
+    ('byVLooseIsolationMVArun2v1DBnewDMwLT', int),
+    ('byLooseIsolationMVArun2v1DBnewDMwLT', int),
+    ('byMediumIsolationMVArun2v1DBnewDMwLT', int),
+    ('byTightIsolationMVArun2v1DBnewDMwLT', int),
+    ('byVTightIsolationMVArun2v1DBnewDMwLT', int),
+    ('byVVTightIsolationMVArun2v1DBnewDMwLT', int),
+
     ('byIsolationMVArun2v1DBdR03oldDMwLTraw', float),
+    ('byVVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
+    ('byVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
     ('byLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
     ('byMediumIsolationMVArun2v1DBdR03oldDMwLT', int),
     ('byTightIsolationMVArun2v1DBdR03oldDMwLT', int),
-    ('byVLooseIsolationMVArun2v1DBdR03oldDMwLT', int),
     ('byVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
     ('byVVTightIsolationMVArun2v1DBdR03oldDMwLT', int),
+
     ('chargedIsoPtSum', float),
     ('neutralIsoPtSum', float),
     ('puCorrPtSum', float),
@@ -53,10 +68,21 @@ def create_tau_ids(name, n_wps=7):
         wps = all_wps[1:]
     if n_wps == 5:
         wps = all_wps[1:6]
-    return [('by' + wp + name, int) for wp in wps] + ['by' + name[:-4] + 'raw' + name[-4:]]
+    if n_wps == 8:
+        wps.append('VVVLoose')
+    if n_wps == 4:
+        wps = all_wps[1:5]
+    if name[-4:-1] == "201":
+      rawname = 'by' + name[:-4] + 'raw' + name[-4:]
+    else:
+      rawname = 'by' + name + 'raw'
+    return [('by' + wp + name, int) for wp in wps] + [(rawname, float)]
 
 
 tau_ids = {
+    'deepTauIDv2p1VSe':create_tau_ids(name='DeepTau2017v2VSe2017', 4),
+    'deepTauIDv2p1VSmu':create_tau_ids(name='DeepTau2017v2VSmu2017', 8),
+    'deepTauIDv2p1VSjet':create_tau_ids(name='DeepTau2017v2VSjet2017', 8),
     '2017v2':create_tau_ids('IsolationMVArun2017v2DBoldDMwLT2017'),
     '2017v1':create_tau_ids('IsolationMVArun2017v1DBoldDMwLT2017'),
     '2016v1':create_tau_ids('IsolationMVArun2v1DBoldDMwLT2016', 6),

@@ -43,12 +43,13 @@ def overlay(graphs, header, addon, runtype,
             tlabel, comparePerReleaseSuffix=""):
     dir_translator = {
         "1p": "1prong",
+        "1ppi0": "1prongpizero",
         "2p": "2prong",
         "3p": "3prong",
-        "modOldDM": "oldDM",
+        "3ppi0": "3prongpizero",
+        "oldDM": "oldDM",
         "newDM": "newDM",
-        "1ppi0": "1prongpizero",
-        "3pold": "3prong_old",
+        "newDMwo2p": "newDMwithout2prong",
     }
 
     ymin = min(TMath.MinElement(g.GetN(), g.GetY()) for g in graphs)
@@ -151,6 +152,7 @@ def hoverlay(hists, xtitle, ytitle,
 
     hratios = []
     for i_hist, hist in enumerate(hists):
+
         hist.SetMaximum(ymax * 1.2)
         hist.SetMinimum(0.)
         # if c.GetLogy > 0:
@@ -162,11 +164,16 @@ def hoverlay(hists, xtitle, ytitle,
 
         if i_hist == 0:
             hist.Draw('h')
+            hist_TAR = hist.Clone()
         else:
             hist.Draw('hsame')
-            ihr = hist.Clone()
+            # ihr = hist.Clone()
             # ihr.Sumw2()
-            ihr.Divide(hists[0])
+            #ihr.Divide(hists[0])
+
+            ihr = hist_TAR.Clone()
+            ihr.Divide(hist)
+
             ihr.SetStats(0)
             ihr.SetLineColor(hist.GetLineColor())
             ihr.SetMarkerColor(hist.GetMarkerColor())
@@ -323,12 +330,12 @@ def makeEffPlotsVars(tree,
 def fillSampledic(globaltags, releases, runtype, inputfiles=None):
     sampledict = {}
     styles = [
+        {'col': 1, 'marker': 26, 'width': 2},
         {'col': 8, 'marker': 25, 'width': 2},
-        {'col': 2, 'marker': 21, 'width': 2},
         {'col': 4, 'marker': 21, 'width': 2},
+        {'col': 2, 'marker': 21, 'width': 2},
         {'col': 7, 'marker': 24, 'width': 2},
         {'col': 41, 'marker': 20, 'width': 2},
-        {'col': 1, 'marker': 26, 'width': 2},
         {'col': 6, 'marker': 22, 'width': 2},
     ]
 
@@ -354,5 +361,8 @@ def fillSampledic(globaltags, releases, runtype, inputfiles=None):
         else:
             sampledict[name]['file'] = TFile(inputfiles[index])
         sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
+
+        # adding the index such that we can sort the dictionary later to have correct ratio plots
+        sampledict[name]['index'] = index
 
     return sampledict

@@ -28,6 +28,7 @@ if __name__ == '__main__':
     cut = 'tau_genpt>20 && abs(tau_geneta)<2.3'
 
     h_migration = TH2F('migration{}'.format(title), '', 5, -1., 4., 6, -2, 4.)
+    #print h_migration.GetName()
     tree.Project(h_migration.GetName(), tau_dm_string+':'+tau_dm_string.replace('tau_', 'tau_gen'), cut)
 
     label = ['None', 'Other', '#pi', '#pi#pi^{0}s', '#pi#pi#pi', '#pi#pi#pi#pi^{0}s']
@@ -41,10 +42,12 @@ if __name__ == '__main__':
 
     for xbin in xrange(1, h_migration.GetNbinsX()+1):
         int_y = sum(h_migration.GetBinContent(xbin, ybin) for ybin in xrange(1, h_migration.GetNbinsY()+1))
+        #print int_y
         if int_y == 0.:
             int_y = 1.
         for ybin in xrange(1, h_migration.GetNbinsY()+1):
             # cont = round(h_migration.GetBinContent(xbin, ybin)/int_y, 2)
+            #print "bin content ", h_migration.GetBinContent(xbin, ybin)
             h_migration.SetBinContent(xbin, ybin, h_migration.GetBinContent(xbin, ybin)/int_y)
 
     h_migration.Draw('TEXT')
@@ -52,4 +55,5 @@ if __name__ == '__main__':
     h_migration.SetMarkerSize(2.2)
     gStyle.SetPaintTextFormat("1.2f")
 
-    canvas.Print('dm_migration_{}.pdf'.format(title))
+    canvas.Print('dm_migration_{}.png'.format(title))
+

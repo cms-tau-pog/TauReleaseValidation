@@ -26,6 +26,7 @@ gStyle.SetOptTitle(0)
 
 RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
 options_dict = {
+    'DYToLL': RuntypeOptions(tlabel='Z #rightarrow ll', xlabel='gen. lepton p_{T}^{vis} (GeV)', xlabel_eta='gen. lepton #eta^{vis}'),
     'ZTT': RuntypeOptions(tlabel='Z #rightarrow #tau#tau', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
     'ZEE': RuntypeOptions(tlabel='Z #rightarrow ee', xlabel='electron p_{T} (GeV)', xlabel_eta='electron #eta'),
     'ZMM': RuntypeOptions(tlabel='Z #rightarrow #mu#mu', xlabel='muon p_{T} (GeV)', xlabel_eta='muon #eta'),
@@ -53,12 +54,14 @@ def efficiency_plots(d_sample, var_name, hdict):
     graphs = []
     graphs_eta = []
 
-    for rel, rdict in d_sample.items():
+    for rel, rdict in sorted(d_sample.items(), key=lambda item: item[1]["index"]):
         tree = rdict['tree']
         if 'leaves' not in rdict:
             rdict['leaves'] = [leaf.GetName() for leaf in tree.GetListOfLeaves()]
         used_vars = word_finder(hdict['var'])
         if not set(used_vars).issubset(rdict['leaves']):
+            with open('missing_leaves.txt', 'a+') as f:
+              print >> f, var_name + ' is missing in input file ' + rdict['file'].GetName()
             warnings.warn(
                 var_name + ' is missing in input file ' + rdict['file'].GetName())
             return
@@ -66,15 +69,14 @@ def efficiency_plots(d_sample, var_name, hdict):
         den_sel = '1'
         discriminators = {"loose_id": den_sel}
         if 'against' in var_name:
-            den_sel = reco_cut + ' && ' + loose_id
+            den_sel = gen_cut + ' && ' + loose_id
 
         for mvaIDname, sel in discriminators.items():
             graphs.append(makeEffPlotsVars(tree=tree,
                                            varx='tau_genpt',
                                            numeratorAddSelection=num_sel +
                                            '&&' + hdict['var'],
-                                           baseSelection=sel +
-                                           '&& abs(tau_eta) < 2.3',
+                                           baseSelection=sel,
                                            binning=ptPlotsBinning,
                                            xtitle=options_dict[runtype].xlabel,
                                            header=rel + mvaIDname, addon=rel + mvaIDname,
@@ -85,7 +87,7 @@ def efficiency_plots(d_sample, var_name, hdict):
                                                varx='tau_geneta',
                                                numeratorAddSelection=num_sel +
                                                '&&' + hdict['var'],
-                                               baseSelection=sel + '&& tau_pt>20',
+                                               baseSelection=sel,
                                                binning=etaPlotsBinning,
                                                xtitle=options_dict[runtype].xlabel_eta,
                                                header=rel + mvaIDname, addon=rel + mvaIDname,
@@ -119,7 +121,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
         if varyLooseId and 'IsolationMVA' in var_name:
             loose_id = 'tau_decayModeFindingOldDMs > 0.5 && ' + findLooseId(var_name)
 
-        for _, rdict in d_sample.items():
+        for _, rdict in sorted(d_sample.items(), key=lambda item: item[1]["index"]):
             tree = rdict['tree']
             if 'leaves' not in rdict:
                 rdict['leaves'] = [leaf.GetName() for leaf in tree.GetListOfLeaves()]
@@ -132,7 +134,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
             den_sel = '1'
             discriminators = {"loose_id": den_sel}
             if 'against' in var_name:
-                den_sel = reco_cut + ' && ' + loose_id
+                den_sel = gen_cut + ' && ' + loose_id
 
             for mvaIDname, sel in discriminators.items():
                 dprint("\n\tmvaIDname:", mvaIDname, "hdict['var']:", hdict['var'])
@@ -140,7 +142,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
                 hists.append(makeEffPlotsVars(tree=tree,
                                               varx='tau_genpt',
                                               numeratorAddSelection=num_sel + '&&' + hdict['var'],
-                                              baseSelection=sel + '&& abs(tau_eta) < 2.3',
+                                              baseSelection=sel,
                                               binning=ptPlotsBinning,
                                               xtitle=options_dict[runtype].xlabel,
                                               header=var_name + mvaIDname, addon=var_name + mvaIDname,
@@ -152,7 +154,7 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
                 histseta.append(makeEffPlotsVars(tree=tree,
                                                  varx='tau_geneta',
                                                  numeratorAddSelection=num_sel + '&&' + hdict['var'],
-                                                 baseSelection=sel + '&& tau_pt>20',
+                                                 baseSelection=sel,
                                                  binning=etaPlotsBinning,
                                                  xtitle=options_dict[runtype].xlabel_eta,
                                                  header=var_name + mvaIDname, addon=var_name + mvaIDname,
@@ -178,7 +180,9 @@ def eff_plots_single(d_sample, vars_to_compare, var_dict):
 
 def var_plots(d_sample, var_name, hdict):
     hists = []
-    for rel, rdict in d_sample.items():
+
+    for rel, rdict in sorted(d_sample.items(), key=lambda item: item[1]["index"]):
+
         tree = rdict['tree']
         if 'leaves' not in rdict:
             rdict['leaves'] = [leaf.GetName() for leaf in tree.GetListOfLeaves()]
@@ -234,14 +238,16 @@ if __name__ == '__main__':
     sampledict = fillSampledic(
         globaltags, releases, runtype, inputfiles)
 
+
     ptPlotsBinning = array('d', [20, 200]) if args.onebin else array(
         'd', [20, 30, 40, 50, 60, 70, 80, 100, 150, 200])
     etaPlotsBinning = array('d', [-2.4, 2.4]) if args.onebin else array(
         'd', [round(-2.4 + i * 0.4, 1) for i in range(13)])
     reco_cut = 'tau_pt > 20 && abs(tau_eta) < 2.3'
+    gen_cut = 'tau_genpt > 20 && abs(tau_geneta) < 2.3'
     # loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseCombinedIsolationDeltaBetaCorr3Hits > 0.5'
     loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
-
+    
     if part in [0, 1]:
         print "First part of plots"
         for h_name, h_dict in vardict.items():
@@ -263,7 +269,7 @@ if __name__ == '__main__':
             if index >= float(len(hvardict.items())) / (totalparts-1) * (part-1): break
             if index < float(len(hvardict.items())) / (totalparts-1) * (part-2): continue
                 
-        if runtype not in ['ZTT', 'TTbarTau'] and h_name.find('pt_resolution') != -1:
+        if runtype not in ['ZTT', 'TTbarTau', 'TenTaus'] and h_name.find('pt_resolution') != -1:
             continue
 
         print "Doing",index+1, ":", h_name
