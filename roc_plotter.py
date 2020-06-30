@@ -16,10 +16,12 @@ from roc_tools import histsToRoc, makeROCPlot
 class ROCPlotter(object):
 
     scan_vars = [
-        ('tau_chargedIsoPtSum', 'chargedIso'),
-        ('tau_byCombinedIsolationDeltaBetaCorrRaw3Hits', 'combIso'),
-        ('(tau_byCombinedIsolationDeltaBetaCorrRaw3Hits + 10e4*(tau_photonPtSumOutsideSignalCone/tau_pt>0.1))', 'combIsoPtOuter'),
-        ('1.-0.5*tau_byIsolationMVArun2v1DBoldDMwLTraw', 'mva'),
+        #('tau_chargedIsoPtSum', 'chargedIso'),
+        #('tau_byCombinedIsolationDeltaBetaCorrRaw3Hits', 'combIso'),
+        #('(tau_byCombinedIsolationDeltaBetaCorrRaw3Hits + 10e4*(tau_photonPtSumOutsideSignalCone/tau_pt>0.1))', 'combIsoPtOuter'),
+        ('0.5-0.5*tau_byIsolationMVArun2v1DBoldDMwLTraw', 'mva'),
+        ('1.-1*tau_byDeepTau2017v2p1VSjetraw', 'deep2017v2p1'),
+        #('tau_byDeepTau2017v2p1VSjetraw', 'deep2017v2p1_inv'),
     ]
 
     def __init__(self):
@@ -39,6 +41,9 @@ class ROCPlotter(object):
         self.selection_background = self.args.selection_background   # It's the same in fact, even though these are jets
         self.tree_name = self.args.tree_name
         self.selection_denominator = self.args.selection_denominator
+        self.bins = self.args.bins
+        self.x_min = self.args.x_min
+        self.x_max = self.args.x_max
 
         # Settings that may vary for each ROC curve
         self.DiscSetup = namedtuple('DiscSetup', ' '.join(['name', 'title', 'signal_files', 'background_files', 'scan_variable']))
@@ -48,6 +53,7 @@ class ROCPlotter(object):
         self.ds_background_files = self.args.ds_background_files
         self.ds_scan_variable = self.args.ds_scan_variable
 
+        print self.ds_signal_files
     @staticmethod
     def checkDirExists(path="", critical=False):
         if not os.path.isdir(path):
@@ -80,13 +86,19 @@ class ROCPlotter(object):
         parser.add_argument('--roc-dir', default='rocs/', type=str,
                             help='rocs dir')
 
-        parser.add_argument('--selection-signal', default='tau_genpt > 20. && abs(tau_geneta)<2.3', type=str,
+        parser.add_argument('--selection-signal', default='tau_pt > 20. && abs(tau_eta)<2.3', type=str,
                             help='')
-        parser.add_argument('--selection-background', default='tau_genpt > 20. && abs(tau_geneta)<2.3', type=str,
+        parser.add_argument('--selection-background', default='tau_pt > 20. && abs(tau_eta)<2.3', type=str,
                             help='')
         parser.add_argument('--tree-name', default='per_tau', type=str,
                             help='')
         parser.add_argument('--selection-denominator', default='1', type=str,
+                            help='')
+        parser.add_argument('--bins', default='10000', type=int,
+                            help='')
+        parser.add_argument('--x-min', default='0.01', type=float,
+                            help='')
+        parser.add_argument('--x-max', default='1.0', type=float,
                             help='')
 
         parser.add_argument('--debug', action='store_true', default=False,
@@ -130,15 +142,15 @@ class ROCPlotter(object):
             chain_s.Add(setup.signal_files)
             # for f_signal in setup.signal_files:
             #     chain_s.Add(f_signal)
-            h_s = TH1F('signal' + setup.name, '', 1000, 0., 1.000001)
+            h_s = TH1F('signal' + setup.name, '', self.bins+1, -1.0/self.bins, 1.000001) # Add one underflow bin, for events not passing selection
             chain_s.Draw(setup.scan_variable + '>>' + h_s.GetName(), '&&'.join([self.selection_signal, self.selection_denominator]))
 
             chain_b = TChain(self.tree_name)
             chain_b.Add(setup.background_files)
             # for f_b in setup.background_files:
             #     chain_b.Add(f_b)
-            h_b = TH1F('background' + setup.name, '', 1000, 0., 1.000001)
-            chain_b.Draw(setup.scan_variable + '>>' + h_b.GetName(), '&&'.join([self.selection_signal, self.selection_denominator]))
+            h_b = TH1F('background' + setup.name, '', self.bins+1, -1.0/self.bins, 1.000001)
+            chain_b.Draw(setup.scan_variable + '>>' + h_b.GetName(), '&&'.join([self.selection_background, self.selection_denominator]))
 
             roc = histsToRoc(h_s, h_b, True)
             roc.title = setup.title
@@ -152,13 +164,14 @@ class ROCPlotter(object):
 
             # Define such that signal -> 1, background -> 0
             scan_variable = '(tau_decayModeFinding && tau_pt>20. && abs(tau_eta)<2.3) * (1./(1.+{}))'.format(scan_var)
+            #scan_variable = '(tau_decayModeFinding && tau_pt>20. && abs(tau_eta)<2.3) * ({})'.format(scan_var)
             if self.args.ds_scan_variable == []:
                 self.ds_scan_variable = [scan_variable] * len(self.args.ds_title)
 
             setups = self.getSetups()
             rocs = self.getROCs(setups)
 
-            makeROCPlot(rocs, self.roc_dir + scan_var_name, xmin=0.4, xmax=0.9, ymin=0.0001 if 'mva' in scan_var_name else 0.001, logy=True)
+            makeROCPlot(rocs, self.roc_dir + scan_var_name, xmin=self.x_min, xmax=self.x_max, ymin=0.0001 if 'mva' in scan_var_name else 0.001, logy=True)
 
 
 if __name__ == '__main__':

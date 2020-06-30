@@ -9,6 +9,8 @@ import sys
 import os
 import copy
 import subprocess
+from time import time
+from datetime import datetime, timedelta
 
 import ROOT
 import argparse  # needs to come after ROOT import
@@ -22,13 +24,13 @@ from tau_ids import all_tau_ids, lepton_tau_ids, \
 
 
 from relValTools import addArguments, getFilesFromEOS, \
-    getFilesFromDAS, is_above_cmssw_version, \
+    getFilesFromDAS, getNeventsFromDAS, is_above_cmssw_version, \
     runtype_to_sample, dprint
 
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(True)
 
-tau_run_types = ['ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
+tau_run_types = ['DYToLL', 'ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
 jet_run_types = ['QCD', 'TTbar']
 muon_run_types = ['ZMM', 'ZpMM']
 ele_run_types = ['ZEE']
@@ -58,7 +60,7 @@ def visibleP4(gen):
     )
 
 
-def removeOverlap(all_jets, gen_leptons, dR2=0.25):
+def removeOverlap(all_jets, gen_leptons, dR2=0.25): # dR2=0.25  ==  dR=0.5
     non_tau_jets = []
     for j_cand in all_jets:
         if not any(deltaR2(j_cand, lep) < dR2 for lep in gen_leptons):
@@ -81,6 +83,50 @@ def isGenLepton(lep_cand, pid):
         abs(lep_cand.eta()) < 2.3
     )
 
+def MatchTausToJets(refObjs):
+
+  # For each Jet, get the closest RecoTau
+  Match = {}
+  for jetidx,refObj in enumerate(refObjs):
+      tau, _dr2_ = bestMatch(refObj, taus) # dR2=0.25  ==  dR=0.5
+      for tauidx,itau in enumerate(taus):
+        if itau==tau: break
+      if _dr2_ < 0.25: Match[jetidx]=tauidx
+
+  # Is the same Tau assinged to more than one Jet?
+  DoubleCheck = []
+  for ijet,itau in Match.iteritems():
+    for jjet,jtau in Match.iteritems():
+      if jjet >= ijet: continue
+      if itau==jtau:
+        if ijet not in DoubleCheck: DoubleCheck.append(ijet)
+        if jjet not in DoubleCheck: DoubleCheck.append(jjet)
+
+  # Get all distances between all conflicting Jets and corresponding Taus
+  Distances = {}
+  for ijet in DoubleCheck:
+    for jjet in DoubleCheck:
+      itau = Match[jjet]
+      Distances[str(ijet)+"_"+str(itau)] = deltaR(taus[itau].eta(), taus[itau].phi(), refObjs[ijet].eta(), refObjs[ijet].phi())
+  #print Distances
+
+  # Remove all conflicting Jets, to re-assign later
+  for ijet in DoubleCheck:
+    del Match[ijet]
+
+  # Assign shortest distance between Tau and Jet, then move on ignoring the already assigned Taus/Jets
+  while Distances != {}:
+    keepthis = min(Distances, key=Distances.get)
+    thisjet = int(keepthis[:keepthis.find("_")])
+    thistau = int(keepthis[keepthis.rfind("_")+1:])
+    Match[thisjet] = thistau
+    deletethis = []
+    for element in Distances:
+      if element.startswith(str(thisjet)) or element.endswith(str(thistau)): deletethis.append(element)
+    for element in deletethis: del Distances[element]
+
+  return Match
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -94,6 +140,7 @@ if __name__ == '__main__':
     maxEvents = args.maxEvents
     RelVal = args.release
     globalTag = args.globalTag
+    exact = args.exact
     useRecoJets = args.useRecoJets
     storageSite = args.storageSite
     localdir = args.localdir
@@ -125,7 +172,7 @@ if __name__ == '__main__':
             filelist = getFilesFromEOS(path)
         elif storageSite == "das":
             filelist = getFilesFromDAS(
-                RelVal, runtype_to_sample[runtype], globalTag)
+                RelVal, runtype_to_sample[runtype], globalTag, exact)
         elif storageSite == 'loc':
             filelist = getFilesFromEOS(
                 localdir + runtype_to_sample[runtype] +
@@ -136,12 +183,10 @@ if __name__ == '__main__':
             print 'Sample', RelVal, runtype, 'does not exist in', path
             sys.exit(0)
 
-    print len(filelist),
-    "files will be analyzed:",
-    filelist,
-    '\nEvents will be analyzed: %i' % maxEvents
-
     events = Events(filelist)
+    if maxEvents < 0 and storageSite == "das":
+      maxEvents=getNeventsFromDAS(RelVal, runtype_to_sample[runtype], globalTag, exact)
+    print len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents
 
     # +++++++ Output file +++++++++
     outputFileName = args.outputFileName
@@ -265,12 +310,19 @@ if __name__ == '__main__':
     candH = Handle('vector<pat::PackedCandidate>')
     lostH = Handle('vector<pat::PackedCandidate>')
 
+    start = time()
     for event in events:
         evtid += 1
         eid = event.eventAuxiliary().id().event()
 
-        if evtid % 1000 == 0:
-            print 'Event ', evtid, 'processed'
+        if evtid % 1000 == 0 and maxEvents>0:
+            if storageSite == "das":
+              percentage = float(evtid)/maxEvents*100.
+              speed = float(evtid)/(time()-start)
+              ETA = datetime.now() + timedelta(seconds=(maxEvents-evtid) / max(0.1, speed))
+              print '===> processing %d / %d event \t completed %.1f%s \t %.1f ev/s \t ETA %s s' %(evtid, maxEvents, percentage, '%', speed, ETA.strftime('%Y-%m-%d %H:%M:%S'))
+            else:
+              print 'Event ', evtid, 'processed'
         if maxEvents > 0 and evtid > maxEvents:
             break
 
@@ -387,8 +439,11 @@ if __name__ == '__main__':
             refObjs = copy.deepcopy(genMuons)
 
         ###
+        Matched = MatchTausToJets(refObjs)
+
+        ###
         h_ngen.Fill(len(refObjs))
-        for refObj in refObjs:
+        for refidx,refObj in enumerate(refObjs):
             for var in all_vars:
                 var.reset()
             all_var_dict['tau_id'].fill(evtid)
@@ -429,8 +484,8 @@ if __name__ == '__main__':
                 all_var_dict['tau_geneta'].fill(refObj.eta())
                 all_var_dict['tau_genphi'].fill(refObj.phi())
 
-            tau, _dr_ = bestMatch(refObj, taus)
-            if _dr_ < 0.5:
+            if refidx in Matched:
+                tau = taus[Matched[refidx]]
                 # Fill reco-tau variables if it exists...
                 NMatchedTaus += 1
 

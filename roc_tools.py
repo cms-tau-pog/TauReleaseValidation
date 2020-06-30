@@ -13,9 +13,11 @@ def histsToRoc(hsig, hbg, w_error=False):
     '''Produce ROC curve from 2 input histograms.
     Partly adapted from Giovanni's ttH code.
     '''
-    nbins = hsig.GetNbinsX() + 2  # include under/overflow
-    si = [hsig.GetBinContent(i) for i in xrange(nbins)]
-    bi = [hbg.GetBinContent(i) for i in xrange(nbins)]
+    nbins = hsig.GetNbinsX() + 2 - 1 # include under/overflow; remove events not passing selection
+    si = [hsig.GetBinContent(i) for i in xrange(nbins+1)]
+    bi = [hbg.GetBinContent(i) for i in xrange(nbins+1)]
+    del si[1]
+    del bi[1]
 
     if hsig.GetMean() > hbg.GetMean():
         si.reverse()
@@ -69,7 +71,7 @@ def histsToRoc(hsig, hbg, w_error=False):
 
 
 def makeLegend(rocs, textSize=0.035, left=True):
-    (x1, y1, x2, y2) = (.18 if left else .68, .76 - textSize * max(len(rocs) - 3, 0), .5 if left else .95, .88)
+    (x1, y1, x2, y2) = (.18 if left else .68, .76 - textSize * max(len(rocs) - 3, 0), .4 if left else .95, .88)
     leg = ROOT.TLegend(x1, y1, x2, y2)
     leg.SetFillColor(0)
     leg.SetShadowColor(0)
