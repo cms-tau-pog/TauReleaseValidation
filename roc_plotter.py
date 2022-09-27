@@ -33,7 +33,7 @@ class ROCPlotter(object):
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
             if error is not None:
-                print "\tmkdir::error:", error
+                print ("\tmkdir::error:", error)
                 exit(1)
 
         # Settings that are likely to be invariant
@@ -53,12 +53,12 @@ class ROCPlotter(object):
         self.ds_background_files = self.args.ds_background_files
         self.ds_scan_variable = self.args.ds_scan_variable
 
-        print self.ds_signal_files
+        print (self.ds_signal_files)
     @staticmethod
     def checkDirExists(path="", critical=False):
         if not os.path.isdir(path):
             if critical:
-                print "Path ", path, "... does not exist"
+                print ("Path ", path, "... does not exist")
                 exit(1)
             else:
                 return False
@@ -110,8 +110,8 @@ class ROCPlotter(object):
     def dprint(self, *text):
         if self.args.debug and text is not None:
             for t in text:
-                print t,
-            print
+                print (t,)
+            print ()
             # print " ".join(map(str, text))
 
     def dpprint(self, *text):

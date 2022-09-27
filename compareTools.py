@@ -19,7 +19,7 @@ def ensureDir(file_path):
             if exc.errno == errno.EEXIST and os.path.isdir(directory):
                 pass
             else:
-                print "Bad name for directory:", file_path
+                print ("Bad name for directory:", file_path)
                 raise
 
 

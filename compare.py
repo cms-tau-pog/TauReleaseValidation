@@ -26,6 +26,7 @@ gStyle.SetOptTitle(0)
 
 RuntypeOptions = namedtuple("RuntypeOptions", "tlabel xlabel xlabel_eta")
 options_dict = {
+    'Data': RuntypeOptions(tlabel='Data', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
     'DYToLL': RuntypeOptions(tlabel='Z #rightarrow ll', xlabel='gen. lepton p_{T}^{vis} (GeV)', xlabel_eta='gen. lepton #eta^{vis}'),
     'ZTT': RuntypeOptions(tlabel='Z #rightarrow #tau#tau', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
     'ZEE': RuntypeOptions(tlabel='Z #rightarrow ee', xlabel='electron p_{T} (GeV)', xlabel_eta='electron #eta'),
@@ -61,7 +62,7 @@ def efficiency_plots(d_sample, var_name, hdict):
         used_vars = word_finder(hdict['var'])
         if not set(used_vars).issubset(rdict['leaves']):
             with open('missing_leaves.txt', 'a+') as f:
-              print >> f, var_name + ' is missing in input file ' + rdict['file'].GetName()
+              print (>> f, var_name + ' is missing in input file ' + rdict['file'].GetName())
             warnings.warn(
                 var_name + ' is missing in input file ' + rdict['file'].GetName())
             return
@@ -249,7 +250,7 @@ if __name__ == '__main__':
     loose_id = 'tau_decayModeFinding > 0.5 && tau_byLooseIsolationMVArun2v1DBoldDMwLT > 0.5'
     
     if part in [0, 1]:
-        print "First part of plots"
+        print ("First part of plots")
         for h_name, h_dict in vardict.items():
             efficiency_plots(sampledict, h_name, h_dict)
 
@@ -257,14 +258,14 @@ if __name__ == '__main__':
         if variables and len(releases) == 1 and len(globaltags) == 1:
             eff_plots_single(sampledict, variables, vardict)
 
-        print "End first part of plots"
+        print ("End first part of plots")
     if part == 1:
         exit()
     elif part != 0:
-        print str(part)+". part of plots"
+        print (str(part)+". part of plots")
 
-    print "Total plots that should be made: "+str(len(hvardict.items()))
-    for index, (h_name, h_dict) in enumerate(hvardict.iteritems()):
+    print ("Total plots that should be made: "+str(len(hvardict.items())))
+    for index, (h_name, h_dict) in enumerate(hvardict.items()):
         if part != 0:
             if index >= float(len(hvardict.items())) / (totalparts-1) * (part-1): break
             if index < float(len(hvardict.items())) / (totalparts-1) * (part-2): continue
@@ -272,7 +273,7 @@ if __name__ == '__main__':
         if runtype not in ['ZTT', 'TTbarTau', 'TenTaus'] and h_name.find('pt_resolution') != -1:
             continue
 
-        print "Doing",index+1, ":", h_name
+        print ("Doing",index+1, ":", h_name)
         var_plots(sampledict, h_name, h_dict)
 
-    print "Finished"
+    print ("Finished")

@@ -11,7 +11,7 @@ from sample_mapping import runtype_to_sample
 
 
 def addArguments(parser, produce=True, compare=False):
-    parser.add_argument('--runtype', choices=['DYToLL', 'ZTT', 'ZEE', 'ZMM', 'ZpMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
+    parser.add_argument('--runtype', choices=['Data', 'DYToLL', 'ZTT', 'ZEE', 'ZMM', 'ZpMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
     parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
 
     # useful for debugging
@@ -51,7 +51,7 @@ def addArguments(parser, produce=True, compare=False):
 def dprint(*text):
     if globaldebug and text is not None:
         for t in text:
-            print t,
+            print (t,)
         print
         # print " ".join(map(str, text))
 
@@ -70,15 +70,15 @@ def getFilesFromEOS(path, cmseospath=True):
     if path[-1] == "/":
         path = path[:-1]
     dirs = eostools.listFiles(cmseospath * '/eos/cms' + path)
-    print "getFilesFromEOS::path:", path
-    print "getFilesFromEOS::dirs: ", dirs
+    print ("getFilesFromEOS::path:", path)
+    print ("getFilesFromEOS::dirs: ", dirs)
 
     files = []
     for sub_path in dirs:
-        print "\tsub_path:", sub_path
+        print ("\tsub_path:", sub_path)
         files += [cmseospath * 'root://eoscms.cern.ch/' + x for x in eostools.listFiles(sub_path) if re.match('.*root', x)]
 
-    print "files:", files
+    print ("files:", files)
     return files
 
 
@@ -89,15 +89,15 @@ def getFilesFromDAS(release, runtype, globalTag, exact=""):
     # Examples/Hardcoding:
     #query = "file dataset=/TauGun_Pt-15to500_14TeV-pythia8/Run3Summer19MiniAOD-2023Scenario_106X_mcRun3_2023_realistic_v3-v2/MINIAODSIM"
     #query = "file dataset=/TTToSemiLeptonic_TuneCP5_14TeV-powheg-pythia8/Run3Summer19MiniAOD-2023Scenario_106X_mcRun3_2023_realistic_v3-v2/MINIAODSIM"
-    print "Getting files from DAS. query:", query
+    print ("Getting files from DAS. query:", query)
     result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
     if not result:
-        query = "file dataset=/*{0}*/*{1}-{2}*/MINIAODSIM".format(runtype, release, globalTag, )
-        print "First attempt unsuccessful. Generalizing query. May take a while.... query:", query
+        query = "file dataset=/*{0}*/*{1}-{2}*/MINIAODSIM".format(runtype, release, globalTag, ) # TODO: Doesn't work! Finds dataset, but not files for all datasets
+        print ("First attempt unsuccessful. Generalizing query. May take a while.... query:", query)
         result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
     files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
 
-    print "files:", files
+    print ("files:", files)
     return files
 
 def getNeventsFromDAS(release, runtype, globalTag, exact=""):
@@ -130,7 +130,7 @@ def versionToInt(release=9, subversion=4, patch=0):
 
 
 def is_above_cmssw_version(release=9, subversion=4, patch=0):
-    split_cmssw_version = get_cmssw_version_number()
+    split_cmssw_version = list(get_cmssw_version_number())
     if versionToInt(release, subversion, patch) > versionToInt(split_cmssw_version[0], split_cmssw_version[1], split_cmssw_version[2]):
         return False
     return True

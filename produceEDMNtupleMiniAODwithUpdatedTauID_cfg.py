@@ -46,7 +46,7 @@ else:
     elif storageSite == 'loc': filelist = getFilesFromEOS(localdir + runtype_to_sample[runtype] + "/" + RelVal + '-' + globalTag + '/', cmseospath=False)
 
     if len(filelist) == 0:
-        print 'Sample', RelVal, runtype, 'does not exist in', path
+        print ('Sample', RelVal, runtype, 'does not exist in', path)
         sys.exit(0)
 
 if storageSite == 'loc': filelist = ['file:' + x for x in filelist]
@@ -54,9 +54,9 @@ if storageSite == 'loc': filelist = ['file:' + x for x in filelist]
 if key not in test_files.keys():
     test_files[key] = { 'file' : filelist }
 else:
-    print "!Warning! Such key already in the default list:", key
+    print ("!Warning! Such key already in the default list:", key)
 
-print "filelist:", filelist
+print ("filelist:", filelist)
 
 ######## Output file ########
 outputFileName = options.outputFileName
@@ -71,13 +71,13 @@ if len(outputFileName) == 0:
     outputFileName += 'output.root'
 else:
     if "/" in outputFileName and outputFileName[0] != "/":
-        print "location of output file has a dir structure but doesn't start with dash"
+        print ("location of output file has a dir structure but doesn't start with dash")
         sys.exit(0)
     if outputFileName[-5:] != ".root":
         outputFileName += '.root'
-        print "output file should have a root format - added automatically:", outputFileName
+        print ("output file should have a root format - added automatically:", outputFileName)
 
-print "outputFileName:", outputFileName
+print ("outputFileName:", outputFileName)
 
 #---------------------------------- Parameter Set --------------------------------------------
 
@@ -118,8 +118,8 @@ na = TauIDEmbedder(process, cms,
 )
 na.runTauID()
 
-print dir(process.loadRecoTauTagMVAsFromPrepDB.toGet)
-print process.loadRecoTauTagMVAsFromPrepDB.toGet[-1]
+print (dir(process.loadRecoTauTagMVAsFromPrepDB.toGet))
+print (process.loadRecoTauTagMVAsFromPrepDB.toGet[-1])
 #--------------------------------------------------------------------------------
 # process.p = cms.Path(process.rerunMvaIsolationSequence * process.NewTauIDsEmbedded)
 
@@ -207,7 +207,7 @@ process = customiseEarlyDelete(process)
 # End adding early deletion
 
 #Customize MessageLogger
-print 'No. of events to process:', process.maxEvents.input.value()
+print ('No. of events to process:', process.maxEvents.input.value())
 if process.maxEvents.input.value() > 10:
      process.MessageLogger.cerr.FwkReport.reportEvery = process.maxEvents.input.value()//10
 if process.maxEvents.input.value() > 10000 or process.maxEvents.input.value() < 0:

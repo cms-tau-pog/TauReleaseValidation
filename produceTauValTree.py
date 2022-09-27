@@ -30,6 +30,7 @@ from relValTools import addArguments, getFilesFromEOS, \
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(True)
 
+data_run_types = ['Data']
 tau_run_types = ['DYToLL', 'ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
 jet_run_types = ['QCD', 'TTbar']
 muon_run_types = ['ZMM', 'ZpMM']
@@ -95,8 +96,8 @@ def MatchTausToJets(refObjs):
 
   # Is the same Tau assinged to more than one Jet?
   DoubleCheck = []
-  for ijet,itau in Match.iteritems():
-    for jjet,jtau in Match.iteritems():
+  for ijet,itau in Match.items():
+    for jjet,jtau in Match.items():
       if jjet >= ijet: continue
       if itau==jtau:
         if ijet not in DoubleCheck: DoubleCheck.append(ijet)
@@ -180,13 +181,13 @@ if __name__ == '__main__':
                 cmseospath=False)
 
         if not filelist:
-            print 'Sample', RelVal, runtype, 'does not exist in', path
+            print ('Sample', RelVal, runtype, 'does not exist in', path)
             sys.exit(0)
 
     events = Events(filelist)
     if maxEvents < 0 and storageSite == "das":
       maxEvents=getNeventsFromDAS(RelVal, runtype_to_sample[runtype], globalTag, exact)
-    print len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents
+    print (len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents)
 
     # +++++++ Output file +++++++++
     outputFileName = args.outputFileName
@@ -216,15 +217,15 @@ if __name__ == '__main__':
 
     else:
         if "/" in outputFileName and outputFileName[0] != "/":
-            print "location of output file has a dir structure " \
-                  " but doesn't start with dash"
+            print ("location of output file has a dir structure " \
+                  " but doesn't start with dash")
             sys.exit(0)
         if outputFileName[-5:] != ".root":
             outputFileName += '.root'
-            print "output file should have a root format" \
-                  " - added automatically:", outputFileName
+            print ("output file should have a root format" \
+                  " - added automatically:", outputFileName)
 
-    print "outputFileName:", outputFileName
+    print ("outputFileName:", outputFileName)
 
     out_file = ROOT.TFile(outputFileName, 'recreate')
 
@@ -320,9 +321,9 @@ if __name__ == '__main__':
               percentage = float(evtid)/maxEvents*100.
               speed = float(evtid)/(time()-start)
               ETA = datetime.now() + timedelta(seconds=(maxEvents-evtid) / max(0.1, speed))
-              print '===> processing %d / %d event \t completed %.1f%s \t %.1f ev/s \t ETA %s s' %(evtid, maxEvents, percentage, '%', speed, ETA.strftime('%Y-%m-%d %H:%M:%S'))
+              print ('===> processing %d / %d event \t completed %.1f%s \t %.1f ev/s \t ETA %s s' %(evtid, maxEvents, percentage, '%', speed, ETA.strftime('%Y-%m-%d %H:%M:%S')))
             else:
-              print 'Event ', evtid, 'processed'
+              print ('Event ', evtid, 'processed')
         if maxEvents > 0 and evtid > maxEvents:
             break
 
@@ -357,8 +358,11 @@ if __name__ == '__main__':
 
         taus = tauH.product()
         vertices = vertexH.product()
-        puInfo = puH.product()
-        genParticles = genParticlesH.product()
+        if not runtype in data_run_types:
+            puInfo = puH.product()
+            genParticles = genParticlesH.product()
+        else:
+            genParticles = []
 
         genTaus = [p for p in genParticles if abs(
             p.pdgId()) == 15 and p.isPromptDecayed()]
@@ -412,8 +416,8 @@ if __name__ == '__main__':
 
                 refObjs.append(gen_tau)
 
-        elif runtype in jet_run_types:
-            if useRecoJets:
+        elif runtype in jet_run_types or runtype in data_run_types:
+            if useRecoJets or runtype in data_run_types:
                 event.getByLabel("slimmedJets", jetH)
                 all_jets = [
                     jet for jet in jetH.product()
@@ -449,13 +453,14 @@ if __name__ == '__main__':
             all_var_dict['tau_id'].fill(evtid)
             all_var_dict['tau_eventid'].fill(eid)
             all_var_dict['tau_vertex'].fill(len(vertices))
-            for iPuInfo in puInfo:
-                if iPuInfo.getBunchCrossing() == 0:
-                    all_var_dict['tau_nTruePU'].fill(
-                        iPuInfo.getTrueNumInteractions())
-                    all_var_dict['tau_nPU'].fill(
-                        iPuInfo.getPU_NumInteractions())
-                    break
+            if not runtype in data_run_types:
+                for iPuInfo in puInfo:
+                    if iPuInfo.getBunchCrossing() == 0:
+                        all_var_dict['tau_nTruePU'].fill(
+                            iPuInfo.getTrueNumInteractions())
+                        all_var_dict['tau_nPU'].fill(
+                            iPuInfo.getPU_NumInteractions())
+                        break
 
             if runtype in tau_run_types:
                 gen_dm = tauDecayModes.genDecayModeInt(
@@ -610,8 +615,8 @@ if __name__ == '__main__':
 
                 fill_tau_ids(all_var_dict, tau, all_tau_ids)
             tau_tree.Fill()
-    print "MATCHED TAUS:", NMatchedTaus
-    print evtid, 'events are processed !'
+    print ("MATCHED TAUS:", NMatchedTaus)
+    print (evtid, 'events are processed !')
 
     out_file.Write()
     out_file.Close()
