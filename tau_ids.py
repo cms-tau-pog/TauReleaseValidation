@@ -80,9 +80,9 @@ def create_tau_ids(name, n_wps=7):
 
 
 tau_ids = {
-    'deepTauIDv2p1VSe':create_tau_ids('DeepTau2017v2p1VSe', 8), #(name='DeepTau2017v2VSe2017', 4), # Old placeholder?
-    'deepTauIDv2p1VSmu':create_tau_ids('DeepTau2017v2p1VSmu', 4), #(name='DeepTau2017v2VSmu2017', 8), # Old placeholder?
-    'deepTauIDv2p1VSjet':create_tau_ids('DeepTau2017v2p1VSjet', 8), #(name='DeepTau2017v2VSjet2017', 8), # Old placeholder?
+    'deepTauIDv2p1VSe':create_tau_ids('DeepTau2017v2p1VSe', 8),
+    'deepTauIDv2p1VSmu':create_tau_ids('DeepTau2017v2p1VSmu', 4),
+    'deepTauIDv2p1VSjet':create_tau_ids('DeepTau2017v2p1VSjet', 8),
     '2017v2':create_tau_ids('IsolationMVArun2017v2DBoldDMwLT2017'),
     '2017v1':create_tau_ids('IsolationMVArun2017v1DBoldDMwLT2017'),
     '2016v1':create_tau_ids('IsolationMVArun2v1DBoldDMwLT2016', 6),

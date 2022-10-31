@@ -32,6 +32,7 @@ options_dict = {
     'ZEE': RuntypeOptions(tlabel='Z #rightarrow ee', xlabel='electron p_{T} (GeV)', xlabel_eta='electron #eta'),
     'ZMM': RuntypeOptions(tlabel='Z #rightarrow #mu#mu', xlabel='muon p_{T} (GeV)', xlabel_eta='muon #eta'),
     'QCD': RuntypeOptions(tlabel='QCD, flat #hat{p}_{T} 15-3000GeV', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
+    'ZpTT': RuntypeOptions(tlabel='Zp #rightarrow #tau#tau', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
     'TTbar': RuntypeOptions(tlabel='TTbar', xlabel='jet p_{T} (GeV)', xlabel_eta='jet #eta'),
     'TTbarTau': RuntypeOptions(tlabel='TTbar #rightarrow #tau+X', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
     'TenTaus': RuntypeOptions(tlabel='Ten taus', xlabel='gen. tau p_{T}^{vis} (GeV)', xlabel_eta='gen. tau #eta^{vis}'),
@@ -62,7 +63,7 @@ def efficiency_plots(d_sample, var_name, hdict):
         used_vars = word_finder(hdict['var'])
         if not set(used_vars).issubset(rdict['leaves']):
             with open('missing_leaves.txt', 'a+') as f:
-              print (>> f, var_name + ' is missing in input file ' + rdict['file'].GetName())
+              print (var_name + ' is missing in input file ' + rdict['file'].GetName(), file=f)
             warnings.warn(
                 var_name + ' is missing in input file ' + rdict['file'].GetName())
             return
@@ -270,7 +271,7 @@ if __name__ == '__main__':
             if index >= float(len(hvardict.items())) / (totalparts-1) * (part-1): break
             if index < float(len(hvardict.items())) / (totalparts-1) * (part-2): continue
                 
-        if runtype not in ['ZTT', 'TTbarTau', 'TenTaus'] and h_name.find('pt_resolution') != -1:
+        if runtype not in ['ZpTT','ZTT', 'TTbarTau', 'TenTaus'] and h_name.find('pt_resolution') != -1:
             continue
 
         print ("Doing",index+1, ":", h_name)

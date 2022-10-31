@@ -22,7 +22,7 @@ def addArguments(parser, produce=True, compare=False):
 
     if produce:
         parser.add_argument('--release', default="CMSSW_9_4_0_pre1", help='Release')
-        parser.add_argument('--globalTag', default='93X_mc2017_realistic_v3-v1', help='Global tag [Default: %(default)s]')
+        parser.add_argument('--globalTag', default='', help='Global tag [Default: %(default)s]') # e.g. 93X_mc2017_realistic_v3-v1
         parser.add_argument('-o', '--outputFileName', default='', help="Output file name [Default: %(default)s]")
         parser.add_argument('-s', '--storageSite', default='eos', choices=['eos', 'das', 'loc'], help="Choose between samples store on eos or DAS or in private local folder [Default: %(default)s]")
         parser.add_argument('-l', '--localdir', default='/eos/user/o/ohlushch/relValMVA/', help="Local dir where the samples are looked up [Default: %(default)s]")#
@@ -39,8 +39,8 @@ def addArguments(parser, produce=True, compare=False):
         parser.add_argument('--totalparts', default=7, type=int, help='How many parts the compare step should be split into. \
             Increase this value if root crashes occur.')
         parser.add_argument('-b', '--onebin', default=False, action="store_true", help='Plot inclusive efficiencies by only using one bin')
-        parser.add_argument('--releases', default=["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"], nargs='*', help='List of releases')
-        parser.add_argument('--globalTags', default=['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1'], nargs='*', help='List of global tags [Default: %(default)s]')
+        parser.add_argument('--releases', default=[], nargs='*', help='List of releases') # e.g. ["CMSSW_9_4_0_pre1", "CMSSW_9_4_0_pre2"]
+        parser.add_argument('--globalTags', default=[], nargs='*', help='List of global tags [Default: %(default)s]') # e.g. ['93X_mc2017_realistic_v3-v1', 'PU25ns_94X_mc2017_realistic_v1-v1']
 
         parser.add_argument('-v', '--variables', default=[], nargs='*', help='Variables to place on a single plot (if only one release+GT)')
         parser.add_argument('-c', '--colors', default=[1, 4], nargs='*', help='Colors of variables to place on a single plot (if only one release+GT)')
