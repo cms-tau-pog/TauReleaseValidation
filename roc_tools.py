@@ -25,7 +25,7 @@ def histsToRoc(hsig, hbg, w_error=False):
 
     sums, sumb = sum(si), sum(bi)
     if sums == 0 or sumb == 0:
-        print 'WARNING: Either signal or background histogram empty', sums, sumb
+        print ('WARNING: Either signal or background histogram empty', sums, sumb)
         return None
 
     for i in xrange(1, nbins):
@@ -87,7 +87,7 @@ def makeLegend(rocs, textSize=0.035, left=True):
 
 
 def makeROCPlot(rocs, set_name, ymin=0., ymax=1., xmin=0., xmax=1., logy=False):
-    print "makeROCPlot"
+    print ("makeROCPlot")
     allrocs = ROOT.TMultiGraph(set_name, '')
     point_graphs = []
     i_marker = 0

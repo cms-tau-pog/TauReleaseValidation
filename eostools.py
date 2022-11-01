@@ -13,7 +13,7 @@ import subprocess
 def splitPFN(pfn):
     """Split the PFN in to { <protocol>, <host>, <path>, <opaque> }"""
     groups = re.match("^(\w+)://([^/]+)/(/[^?]+)(\?.*)?", pfn)
-    if not groups: raise RuntimeError, "Malformed pfn: '%s'" % pfn
+    if not groups: raise RuntimeError ("Malformed pfn: '%s'" % pfn)
     return (groups.group(1), groups.group(2), groups.group(3), groups.group(4))
 
 def _runCommand(cmd):
@@ -167,7 +167,7 @@ def eosDirSize(path):
 def fileChecksum(path):
     '''Returns the checksum of a file (local or on EOS).'''
     checksum='ERROR'
-    if not fileExists(path): raise RuntimeError, 'File does not exist.'
+    if not fileExists(path): raise RuntimeError ('File does not exist.')
     if isEOS(path):
         lfn = eosToLFN(path)
         res = runEOSCommand(lfn, 'find', '--checksum')
@@ -271,7 +271,7 @@ def listFiles(path, rec = False, full_info = False):
             return result
     # -- listing on EOS --
     if not isEOSDir(path):
-        raise RuntimeError, "Bad path '%s': not existent, and not in EOS" % path
+        raise RuntimeError ("Bad path '%s': not existent, and not in EOS" % path)
     cmd = 'dirlist'
     if rec:
         cmd = 'dirlistrec'
@@ -490,5 +490,5 @@ def cmsStage( absDestDir, files, force):
             command.append('-f')
         command.append(eosToLFN(fname))
         command.append(eosToLFN(absDestDir))
-        print ' '.join(command)
+        print (' '.join(command))
         _runCommand(command)

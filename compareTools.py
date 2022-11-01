@@ -3,7 +3,7 @@ import errno
 import pprint
 
 from ROOT import TH1F, TFile, TCanvas, TPad, TLegend, \
-    TGraphAsymmErrors, Double, TLatex, TMath
+    TGraphAsymmErrors, TLatex, TMath
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -19,7 +19,7 @@ def ensureDir(file_path):
             if exc.errno == errno.EEXIST and os.path.isdir(directory):
                 pass
             else:
-                print "Bad name for directory:", file_path
+                print ("Bad name for directory:", file_path)
                 raise
 
 
@@ -35,7 +35,7 @@ def configureLegend(leg, ncolumn):
     leg.SetFillColor(10)
     leg.SetLineColor(0)
     leg.SetFillStyle(0)
-    leg.SetTextSize(0.02)
+    leg.SetTextSize(0.027)
     leg.SetTextFont(42)
 
 
@@ -88,7 +88,7 @@ def overlay(graphs, header, addon, runtype,
     tex.SetTextSize(0.03)
     tex.Draw()
 
-    xshift = 0.87
+    xshift = 0.88
     if tlabel.find('QCD') != -1:
         xshift = 0.6
     if runtype.find('TTbarTau') != -1:
@@ -97,12 +97,12 @@ def overlay(graphs, header, addon, runtype,
         (graphs[-1].GetXaxis().GetXmin() +
          xshift * (graphs[-1].GetXaxis().GetXmax() -
                    graphs[-1].GetXaxis().GetXmin())),
-        ymax * 1.4,
+        ymax * 1.42,
         tlabel
     )
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
-    tex2.SetTextSize(0.03)
+    tex2.SetTextSize(0.035)
     tex2.Draw()
 
     eta = '_eta' if '_eta' in header else ''
@@ -147,7 +147,7 @@ def hoverlay(hists, xtitle, ytitle,
         pad1.SetLogy()
 
     ymax = max([hist.GetMaximum() for hist in hists])
-    leg = TLegend(0.2, 0.65, 0.91, 0.9)
+    leg = TLegend(0.2, 0.7, 0.6, 0.9)
     configureLegend(leg, 1)
 
     hratios = []
@@ -156,9 +156,10 @@ def hoverlay(hists, xtitle, ytitle,
         hist.SetMaximum(ymax * 1.2)
         hist.SetMinimum(0.)
         # if c.GetLogy > 0:
-        if pad1.GetLogy > 0:
+        if pad1.GetLogy() > 0:
             hist.SetMinimum(0.001)
-        hist.SetMarkerSize(0.)
+        hist.SetMarkerSize(1)
+        hist.SetMarkerStyle(43)
         hist.GetXaxis().SetTitle(xtitle)
         hist.GetYaxis().SetTitle(ytitle)
 
@@ -171,20 +172,21 @@ def hoverlay(hists, xtitle, ytitle,
             # ihr.Sumw2()
             #ihr.Divide(hists[0])
 
-            ihr = hist_TAR.Clone()
-            ihr.Divide(hist)
+            ihr = hist.Clone()
+            ihr.Divide(hist_TAR)
 
             ihr.SetStats(0)
             ihr.SetLineColor(hist.GetLineColor())
             ihr.SetMarkerColor(hist.GetMarkerColor())
             ihr.SetMarkerStyle(hist.GetMarkerStyle())
+            ihr.SetMarkerSize(0)
             hratios.append(ihr)
 
         leg.AddEntry(hist, hist.GetName(), "l")
 
     leg.Draw()
 
-    xshift = 0.87
+    xshift = 0.88
     # xshift=0.7
     if tlabel.find('QCD') != -1:
         xshift = 0.6
@@ -194,12 +196,12 @@ def hoverlay(hists, xtitle, ytitle,
                    xshift *
                    (hists[0].GetXaxis().GetXmax() -
                     hists[0].GetXaxis().GetXmin())),
-                  ymax * 1.2,
+                  ymax * 1.22,
                   tlabel)
 
     tex2.SetTextAlign(10)
     tex2.SetTextFont(42)
-    tex2.SetTextSize(0.043)
+    tex2.SetTextSize(0.05)
     tex2.Draw()
 
     # lower plot will be in pad
@@ -208,11 +210,16 @@ def hoverlay(hists, xtitle, ytitle,
     pad2.SetTopMargin(0)
     pad2.SetBottomMargin(0.25)
     pad2.Draw()
+    tex3 = TLatex(0.95, 0.02, name)
+    tex3.SetTextAlign(30)
+    tex3.SetTextFont(42)
+    tex3.SetTextSize(0.035)
+    tex3.Draw()
     pad2.cd()
     for ii, hist in enumerate(hratios):
         hist.GetYaxis().SetTitle('ratio')
-        hist.SetMinimum(0.75)
-        hist.SetMaximum(1.25)
+        hist.SetMinimum(0.5)
+        hist.SetMaximum(1.5)
         hist.GetYaxis().SetTitleOffset(0.33)
         hist.GetYaxis().SetTitleSize(0.193)
         hist.GetYaxis().SetLabelSize(0.175)
@@ -282,8 +289,8 @@ def findLooseId(hname):
 
 def shiftAlongX(tGraph, numberOfGraphs, index):
     for binNumber in xrange(tGraph.GetN()):
-        x = Double(-1)
-        y = Double(-1)
+        x = -1.0
+        y = -1.0
         tGraph.GetPoint(binNumber, x, y)
         shift = (tGraph.GetErrorXhigh(binNumber)) / (numberOfGraphs + 1)
         x = x + shift * index
@@ -319,7 +326,7 @@ def makeEffPlotsVars(tree,
     g_eff.SetMinimum(0.)
     g_eff.GetYaxis().SetTitleOffset(1.3)
     g_eff.SetMarkerStyle(marker)
-    g_eff.SetMarkerSize(1)
+    g_eff.SetMarkerSize(2)
     g_eff.SetMarkerColor(col)
     g_eff.SetLineColor(col)
     g_eff.Draw('ap')
@@ -330,39 +337,49 @@ def makeEffPlotsVars(tree,
 def fillSampledic(globaltags, releases, runtype, inputfiles=None):
     sampledict = {}
     styles = [
-        {'col': 1, 'marker': 26, 'width': 2},
-        {'col': 8, 'marker': 25, 'width': 2},
-        {'col': 4, 'marker': 21, 'width': 2},
-        {'col': 2, 'marker': 21, 'width': 2},
-        {'col': 7, 'marker': 24, 'width': 2},
-        {'col': 41, 'marker': 20, 'width': 2},
-        {'col': 6, 'marker': 22, 'width': 2},
+        {'col': 1, 'marker': 24, 'width': 2},
+        {'col': 2, 'marker': 25, 'width': 2},
+        {'col': 4, 'marker': 26, 'width': 2},
+        {'col': 8, 'marker': 32, 'width': 2},
+        {'col': 6, 'marker': 27, 'width': 2},
+        {'col': 7, 'marker': 28, 'width': 2},
+        {'col': 41, 'marker': 30, 'width': 2},
     ]
+    jet_run_types = ['QCD', 'TTbar']
+    muon_run_types = ['ZMM', 'ZpMM']
+    ele_run_types = ['ZEE']
+    if runtype in jet_run_types:
+        runtype = runtype + "_genJets"
+    if runtype in muon_run_types:
+        runtype = runtype + "_genMuon"
+    if runtype in ele_run_types:
+        runtype = runtype + "_genEle"
 
-    for index, globalTag in enumerate(globaltags):
-        name = releases[index]+"_"+globalTag
-        sampledict[name] = styles[index]
+    if globaltags==[] and inputfiles is not None:
+        for index, inputf in enumerate(inputfiles):
+            name = inputf.replace(".root", "")+"_"
+            sampledict[name] = styles[index]
 
-        jet_run_types = ['QCD', 'TTbar']
-        muon_run_types = ['ZMM', 'ZpMM']
-        ele_run_types = ['ZEE']
-        if runtype in jet_run_types:
-            runtype = runtype + "_genJets"
-        if runtype in muon_run_types:
-            runtype = runtype + "_genMuon"
-        if runtype in ele_run_types:
-            runtype = runtype + "_genEle"
-
-        if not inputfiles:
-            sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(
-                releases[index],
-                globalTag,
-                runtype))
-        else:
             sampledict[name]['file'] = TFile(inputfiles[index])
-        sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
+            sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
 
-        # adding the index such that we can sort the dictionary later to have correct ratio plots
-        sampledict[name]['index'] = index
+            # adding the index such that we can sort the dictionary later to have correct ratio plots
+            sampledict[name]['index'] = index
+    else:
+        for index, globalTag in enumerate(globaltags):
+            name = releases[index]+"_"+globalTag
+            sampledict[name] = styles[index]
+
+            if inputfiles is None:
+                sampledict[name]['file'] = TFile('Myroot_{}_{}_{}.root'.format(
+                    releases[index],
+                    globalTag,
+                    runtype))
+            else:
+                sampledict[name]['file'] = TFile(inputfiles[index])
+            sampledict[name]['tree'] = sampledict[name]['file'].Get('per_tau')
+
+            # adding the index such that we can sort the dictionary later to have correct ratio plots
+            sampledict[name]['index'] = index
 
     return sampledict

@@ -64,9 +64,9 @@ if __name__ == '__main__':
                 ' --tauCollection ' + tauCollection + mvaidstr + dd
             + (len(outputFileName) > 0) * (' --outputFileName ' + outputFileName)
 
-        print '===================='
-        print command
-        print '===================='
+        print ('====================')
+        print (command)
+        print ('====================')
         os.system(command)
 
     onebin = ' -b' if onebin else ''
@@ -78,11 +78,11 @@ if __name__ == '__main__':
         commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p ' + str(i+1) + dd)
 
     for command in commands:
-        print '===================='
-        print command
-        print '===================='
+        print ('====================')
+        print (command)
+        print ('====================')
         os.system(command)
 
 
     #webplotting.webplotting(input_dir="./compare_{0}".format(runtype), recursive=True)
-    print "FINISHED SUCCESSFULLY"
+    print ("FINISHED SUCCESSFULLY")
