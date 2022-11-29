@@ -30,7 +30,7 @@ from relValTools import addArguments, getFilesFromEOS, \
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(True)
 
-data_run_types = ['Data']
+data_run_types = ['Data', 'DataTau', 'DataMu', 'DataEl']
 tau_run_types = ['DYToLL', 'ZTT', 'ZpTT', 'TTbarTau', 'TenTaus']
 jet_run_types = ['QCD', 'TTbar']
 muon_run_types = ['ZMM', 'ZpMM']
@@ -160,12 +160,14 @@ if __name__ == '__main__':
 
     filelist = []
 
+    miniaod = "MINIAOD" if "Data" in runtype else "MINIAODSIM"
     if inputfiles:
         filelist = inputfiles
     else:
-        path = '/store/relval/{}/{}/MINIAODSIM/{}'.format(
+        path = '/store/relval/{}/{}/{}/{}'.format(
             RelVal,
             runtype_to_sample[runtype],
+            miniaod,
             globalTag
         )
 
@@ -173,7 +175,7 @@ if __name__ == '__main__':
             filelist = getFilesFromEOS(path)
         elif storageSite == "das":
             filelist = getFilesFromDAS(
-                RelVal, runtype_to_sample[runtype], globalTag, exact)
+                RelVal, runtype_to_sample[runtype], globalTag, miniaod, exact)
         elif storageSite == 'loc':
             filelist = getFilesFromEOS(
                 localdir + runtype_to_sample[runtype] +
@@ -186,7 +188,7 @@ if __name__ == '__main__':
 
     events = Events(filelist)
     if maxEvents < 0 and storageSite == "das":
-      maxEvents=getNeventsFromDAS(RelVal, runtype_to_sample[runtype], globalTag, exact)
+      maxEvents=getNeventsFromDAS(RelVal, runtype_to_sample[runtype], globalTag, miniaod, exact)
     print (len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents)
 
     # +++++++ Output file +++++++++

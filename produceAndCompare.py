@@ -38,7 +38,7 @@ if __name__ == '__main__':
     totalparts = args.totalparts
 
     localdir = args.localdir
-    if len(localdir) > 1 and localdir[-1] is not '/':
+    if len(localdir) > 1 and localdir[-1] != '/':
         localdir += '/'
 
     mvaidstr = ' --mvaid ' + ' '.join(args.mvaid)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         for i, relval in enumerate(relVals):
             inputfile = ' --inputfile ' + inputfiles[i] if len(inputfiles) > 0 else ''
 
-            command = 'python ' + scriptPath + 'produceTauValTree.py --release ' + relval + \
+            command = 'python3 ' + scriptPath + 'produceTauValTree.py --release ' + relval + \
                 ' --globalTag ' + globalTags[i] + \
                 inputfile + \
                 ' --runtype ' + runtype + \
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     commands = []
     for i in range(totalparts):
-        commands.append('python ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p ' + str(i+1) + dd)
+        commands.append('python3 ' + scriptPath + 'compare.py --releases ' + releases + ' --globalTags ' + globalTagsstr + ' --runtype ' + str(runtype) + onebin + ' -p ' + str(i+1) + dd)
 
     for command in commands:
         print ('====================')

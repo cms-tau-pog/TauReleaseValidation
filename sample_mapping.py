@@ -10,6 +10,9 @@ runtype_to_sample = {
     'ZEE'  : 'RelValZEE_13',
     'ZMM'  : 'RelValZMM_13', 
     'ZTT'  : 'RelValZTT_13', 
+    'DataTau' : 'Tau', 
+    'DataMu'  : 'SingleMuon', 
+    'DataEl'  : 'EGamma', 
 }
 # runtype_to_sample = {
 #     'DYToLL' : 'RelValDYToLL_M_50_14TeV',
