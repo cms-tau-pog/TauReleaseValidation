@@ -11,7 +11,7 @@ from sample_mapping import runtype_to_sample
 
 
 def addArguments(parser, produce=True, compare=False):
-    parser.add_argument('--runtype', choices=['Data', 'DYToLL', 'ZTT', 'ZEE', 'ZMM', 'ZpMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
+    parser.add_argument('--runtype', choices=['Data', 'DataTau', 'DataMu', 'DataEl', 'DYToLL', 'ZTT', 'ZEE', 'ZMM', 'ZpMM', 'QCD', 'TTbar', 'TTbarTau', 'ZpTT', 'TenTaus'], help='choose sample type')
     parser.add_argument('-i', '--inputfiles', default=[], nargs='*', help="List of files locations [Default: %(default)s]")
 
     # useful for debugging
@@ -82,32 +82,32 @@ def getFilesFromEOS(path, cmseospath=True):
     return files
 
 
-def getFilesFromDAS(release, runtype, globalTag, exact=""):
+def getFilesFromDAS(release, runtype, globalTag, miniaod, exact=""):
     '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
-    query = "file dataset=/{0}/{1}-{2}/MINIAODSIM".format(runtype, release, globalTag, )
+    query = "file dataset=/{0}/{1}-{2}/{3}".format(runtype, release, globalTag, miniaod)
     if exact != "": query = "file dataset={0}".format(exact)
     # Examples/Hardcoding:
     #query = "file dataset=/TauGun_Pt-15to500_14TeV-pythia8/Run3Summer19MiniAOD-2023Scenario_106X_mcRun3_2023_realistic_v3-v2/MINIAODSIM"
     #query = "file dataset=/TTToSemiLeptonic_TuneCP5_14TeV-powheg-pythia8/Run3Summer19MiniAOD-2023Scenario_106X_mcRun3_2023_realistic_v3-v2/MINIAODSIM"
     print ("Getting files from DAS. query:", query)
-    result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
+    result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True).decode("utf-8")
     if not result:
-        query = "file dataset=/*{0}*/*{1}-{2}*/MINIAODSIM".format(runtype, release, globalTag, ) # TODO: Doesn't work! Finds dataset, but not files for all datasets
+        query = "file dataset=/*{0}*/*{1}-{2}*/{3}".format(runtype, release, globalTag, miniaod) # TODO: Doesn't work! Finds dataset, but not files for all datasets
         print ("First attempt unsuccessful. Generalizing query. May take a while.... query:", query)
-        result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True)
+        result = subprocess.check_output("dasgoclient --query='" + query + "'", shell=True).decode("utf-8")
     files = ["root://cms-xrd-global.cern.ch/" + s.strip() for s in result.splitlines()]
 
     print ("files:", files)
     return files
 
-def getNeventsFromDAS(release, runtype, globalTag, exact=""):
+def getNeventsFromDAS(release, runtype, globalTag, miniaod, exact=""):
     '''Get proxy with "voms-proxy-init -voms cms" to use this option.'''
-    query = "dataset=/{0}/{1}-{2}/MINIAODSIM".format(runtype, release, globalTag, )
+    query = "dataset=/{0}/{1}-{2}/{3}".format(runtype, release, globalTag, miniaod)
     if exact != "": query = "dataset={0}".format(exact)
-    result = subprocess.check_output("dasgoclient --query='" + query + "' -json", shell=True)
+    result = subprocess.check_output("dasgoclient --query='" + query + "' -json", shell=True).decode("utf-8")
     if '[\n]' in result:
-        query = "dataset=/*{0}*/*{1}-{2}*/MINIAODSIM".format(runtype, release, globalTag, )
-        result = subprocess.check_output("dasgoclient --query='" + query + "' -json", shell=True)
+        query = "dataset=/*{0}*/*{1}-{2}*/{3}".format(runtype, release, globalTag, miniaod)
+        result = subprocess.check_output("dasgoclient --query='" + query + "' -json", shell=True).decode("utf-8")
     try:
       nevents=int(result[result.find("nevent")+9:result.find("nfiles")-2])
       return nevents
